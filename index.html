@@ -484,6 +484,13 @@ select.form-control {
   font-size: 11px; font-weight: 700; color: white;
   background: var(--danger); padding: 2px 9px; border-radius: 20px;
 }
+.btn-icon-wa {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 8px;
+  background: #EDF5EE; border: 1px solid #B8D9BB; color: #2D6630;
+  cursor: pointer; flex-shrink: 0; padding: 0;
+}
+.btn-icon-wa:hover { background: #DFF0E1; }
 
 /* ── MODAL ───────────────────────────────────────── */
 .modal-overlay {
@@ -830,6 +837,8 @@ select.form-control {
         </div>
       </div>
 
+      <div id="dash-alertas"></div>
+
       <div class="section-header">
         <span class="section-title">Hoje</span>
         <button class="see-all" onclick="navigate('agenda')">Ver agenda</button>
@@ -904,7 +913,7 @@ select.form-control {
         <button class="tab" data-tab="despesas" onclick="setFinTab(this)">Despesas</button>
         <button class="tab" data-tab="pagamentos" onclick="setFinTab(this)">Pagamentos</button>
       </div>
-      <div class="card"><div id="fin-list"></div></div>
+      <div id="fin-list"></div>
     </div>
 
     <!-- VENDAS -->
@@ -1109,6 +1118,10 @@ select.form-control {
       </div>
       <span id="det-badge"></span>
     </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <button class="btn btn-ghost btn-sm" onclick="abrirMsgConfirmacao(currentDetailId)">📋 Msg confirmação</button>
+      <button class="btn btn-ghost btn-sm" onclick="abrirRecibo(currentDetailId)">🧾 Recibo</button>
+    </div>
     <div id="det-body"></div>
     <div id="det-concluir-wrap" style="margin-top:18px;display:none">
       <button class="btn btn-success" style="width:100%;font-size:14px;padding:13px" onclick="concluirPedido()">
@@ -1261,6 +1274,25 @@ select.form-control {
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-meta')">Cancelar</button>
       <button class="btn btn-primary" style="background:var(--blue-dark)" onclick="saveMeta()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MENSAGEM / RECIBO -->
+<div class="modal-overlay" id="modal-msg">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-msg-title">Mensagem</div>
+    <div class="form-group">
+      <textarea class="form-control" id="msg-texto" rows="12" style="font-size:13px;line-height:1.6"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-msg')">Fechar</button>
+      <button class="btn btn-ghost" onclick="copiarMsgTexto()">Copiar</button>
+      <button class="btn btn-primary" id="msg-wa-btn" style="background:#25D366" onclick="abrirWhatsappMsg()">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        WhatsApp
+      </button>
     </div>
   </div>
 </div>
@@ -1444,6 +1476,7 @@ function handleTopAction() { document.getElementById('search-pedidos')?.focus();
 function renderDashboard() {
   renderAvisosEntrega();
   renderMetaCard();
+  renderAlertasDashboard();
 
   const pedidos  = load(K.P);
   const today    = todayStr();
@@ -1577,6 +1610,77 @@ function saveMeta() {
   showToast('Meta atualizada.');
 }
 
+/* ── ALERTAS (pedido parado, saldo pendente, risco de prazo) ───── */
+function calcularAlertasPedidos() {
+  const pedidos = load(K.P);
+  const hoje = todayStr();
+  const agora = new Date();
+  const alertas = [];
+  const adormecido = (p, tipo) => p.alertaSnoozeTipo === tipo && p.alertaSnoozeAte && p.alertaSnoozeAte >= hoje;
+
+  pedidos.forEach(p => {
+    if (p.status === 'Cancelado') return;
+
+    // Pedido "Novo" ou "Em Produção" sem mudar de status há 5+ dias
+    if (p.status === 'Novo' || p.status === 'Em Produção') {
+      const desde = p.statusDesde || p.criado || agora.toISOString();
+      const dias = Math.floor((agora - new Date(desde)) / 86400000);
+      if (dias >= 5 && !adormecido(p, 'parado')) {
+        alertas.push({ id: p.id, tipo: 'parado', texto: `<b>${p.nome||'Pedido'}</b> está "${p.status}" há ${dias} dias sem atualização.` });
+      }
+    }
+
+    // Entrega perto (0-3 dias) mas produção ainda nem começou
+    if (p.status === 'Novo' && p.dataEntrega) {
+      const diasPrazo = Math.round((new Date(p.dataEntrega) - new Date(hoje)) / 86400000);
+      if (diasPrazo >= 0 && diasPrazo <= 3 && !adormecido(p, 'prazo')) {
+        alertas.push({ id: p.id, tipo: 'prazo', texto: `<b>${p.nome||'Pedido'}</b> entrega em ${diasPrazo===0?'hoje':diasPrazo+' dia(s)'}, mas ainda está como "Novo".` });
+      }
+    }
+
+    // Pedido já entregue com saldo ainda pendente
+    if (p.status === 'Entregue' && (p.pendente||0) > 0 && !adormecido(p, 'saldo')) {
+      alertas.push({ id: p.id, tipo: 'saldo', texto: `Pedido de <b>${p.nome||'—'}</b> já entregue, mas ainda tem ${fmtM(p.pendente)} pendente.` });
+    }
+  });
+
+  return alertas;
+}
+
+function renderAlertasDashboard() {
+  const el = document.getElementById('dash-alertas');
+  const alertas = calcularAlertasPedidos();
+  if (!alertas.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <div class="section-header" style="margin-top:6px">
+      <span class="section-title">⚠️ Alertas</span>
+    </div>
+    <div class="card" style="padding:4px 20px">
+      ${alertas.map(a => `
+        <div class="tx-row" style="align-items:flex-start">
+          <div style="flex:1;padding-right:10px">
+            <div style="font-size:13px;color:var(--text);line-height:1.5">${a.texto}</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">
+            <button class="btn btn-ghost btn-sm" onclick="openDetail('${a.id}')">Ver</button>
+            <button class="btn btn-ghost btn-sm" onclick="snoozeAlertaPedido('${a.id}','${a.tipo}')">Adiar 7d</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>`;
+}
+
+function snoozeAlertaPedido(id, tipo) {
+  const ps = load(K.P);
+  const idx = ps.findIndex(p => p.id === id);
+  if (idx < 0) return;
+  ps[idx].alertaSnoozeAte = offsetDate(7);
+  ps[idx].alertaSnoozeTipo = tipo;
+  save(K.P, ps);
+  renderAlertasDashboard();
+  showToast('Alerta adiado por 7 dias.');
+}
+
 /* ── PEDIDOS ─────────────────────────────────────── */
 function renderPedidos(filter) {
   if (filter && filter!=='Todos') {
@@ -1610,6 +1714,7 @@ function pedidoCardHTML(p) {
   const pend  = (p.total||0)-(p.pago||0);
   const sClass= { 'Novo':'s-novo','Em Produção':'s-producao','Pronto':'s-pronto','Entregue':'s-entregue','Cancelado':'s-cancelado' }[p.status]||'';
   const bClass= { 'Novo':'badge-novo','Em Produção':'badge-emproducao','Pronto':'badge-pronto','Entregue':'badge-entregue','Cancelado':'badge-cancelado' }[p.status]||'';
+  const wa = p.whatsapp ? `https://wa.me/55${p.whatsapp.replace(/\D/g,'')}` : null;
   return `
   <div class="pedido-card ${atras?'s-atrasado':sClass}" onclick="openDetail('${p.id}')">
     <div class="pedido-card-header">
@@ -1628,7 +1733,12 @@ function pedidoCardHTML(p) {
         ${p.dataEntrega?formatDate(p.dataEntrega):'—'}
       </span>
       ${p.produtos?`<span class="pedido-meta-item"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>${p.produtos.length>32?p.produtos.slice(0,32)+'…':p.produtos}</span>`:''}
-      ${pend>0?`<span class="tag-pendente">${fmtM(pend)} pendente</span>`:''}
+      <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        ${pend>0?`<span class="tag-pendente" style="margin-left:0">${fmtM(pend)} pendente</span>`:''}
+        ${wa?`<button class="btn-icon-wa" onclick="event.stopPropagation();window.open('${wa}','_blank')" title="WhatsApp">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        </button>`:''}
+      </div>
     </div>
   </div>`;
 }
@@ -1740,6 +1850,75 @@ function deletePedidoFromDetail() {
   showToast('Pedido excluído.');
 }
 
+/* ── MENSAGEM DE CONFIRMAÇÃO E RECIBO ────────────── */
+let _msgWaLink = null;
+
+function abrirModalMsg(titulo, texto, waLink) {
+  document.getElementById('modal-msg-title').textContent = titulo;
+  document.getElementById('msg-texto').value = texto;
+  _msgWaLink = waLink;
+  document.getElementById('msg-wa-btn').style.display = waLink ? 'inline-flex' : 'none';
+  openModal('modal-msg');
+}
+function copiarMsgTexto() {
+  const texto = document.getElementById('msg-texto').value;
+  navigator.clipboard.writeText(texto).then(()=>showToast('Copiado!')).catch(()=>showToast('Não foi possível copiar.'));
+}
+function abrirWhatsappMsg() {
+  if (!_msgWaLink) { showToast('Este cliente não tem WhatsApp cadastrado.'); return; }
+  const texto = document.getElementById('msg-texto').value;
+  window.open(`${_msgWaLink}?text=${encodeURIComponent(texto)}`, '_blank');
+}
+
+function gerarMsgConfirmacaoPedido(p) {
+  const pend = Math.max(0, (p.total||0) - (p.pago||0));
+  const linhas = [
+    '🧁 Pedido confirmado — Graça em Papel',
+    `Cliente: ${p.nome || '—'}`,
+    p.produtos ? `Produtos: ${p.produtos}` : null,
+    p.dataEvento ? `Data do evento: ${formatDate(p.dataEvento)}` : null,
+    `📅 Entrega: ${p.dataEntrega ? formatDate(p.dataEntrega) : '—'}`,
+    p.total ? `💰 Valor total: ${fmtM(p.total)}` : null,
+    p.pago > 0 ? `✅ Sinal recebido: ${fmtM(p.pago)}` : null,
+    p.total ? (pend > 0 ? `💵 Restante: ${fmtM(pend)} a combinar` : '✅ Pagamento quitado.') : null,
+    '',
+    'Obrigada pela confiança! Vou capricho no seu pedido. 🎀'
+  ].filter(l => l !== null);
+  return linhas.join('\n');
+}
+function abrirMsgConfirmacao(id) {
+  const p = load(K.P).find(x => x.id === id);
+  if (!p) { showToast('Pedido não encontrado.'); return; }
+  const wa = p.whatsapp ? `https://wa.me/55${p.whatsapp.replace(/\D/g,'')}` : null;
+  abrirModalMsg('📋 Mensagem de confirmação', gerarMsgConfirmacaoPedido(p), wa);
+}
+
+function gerarReciboPedido(p) {
+  const pend = Math.max(0, (p.total||0) - (p.pago||0));
+  const numero = `${(p.dataEntrega || todayStr()).slice(0,4)}-${(p.id||'').replace(/\D/g,'').slice(-4) || '0000'}`;
+  const linhas = [
+    'Graça em Papel — Comprovante',
+    `Recibo nº ${numero}`,
+    '',
+    `Cliente: ${p.nome || '—'}`,
+    p.produtos ? `Produtos: ${p.produtos}` : null,
+    `Valor total: ${fmtM(p.total)}`,
+    `Valor pago: ${fmtM(p.pago)}`,
+    pend > 0 ? `Saldo pendente: ${fmtM(pend)}` : 'Situação: Quitado ✅',
+    p.dataEntrega ? `Entrega: ${formatDate(p.dataEntrega)}` : null,
+    '',
+    'Obrigada pela confiança em nosso trabalho!',
+    'Graça em Papel'
+  ].filter(l => l !== null);
+  return linhas.join('\n');
+}
+function abrirRecibo(id) {
+  const p = load(K.P).find(x => x.id === id);
+  if (!p) { showToast('Pedido não encontrado.'); return; }
+  const wa = p.whatsapp ? `https://wa.me/55${p.whatsapp.replace(/\D/g,'')}` : null;
+  abrirModalMsg('🧾 Recibo', gerarReciboPedido(p), wa);
+}
+
 function openPedidoModal(p=null) {
   document.getElementById('modal-pedido-title').textContent = p ? 'Editar pedido' : 'Novo pedido';
   const set = (id, val) => { document.getElementById(id).value = val||''; };
@@ -1828,19 +2007,26 @@ function savePedido() {
   const id    = document.getElementById('pedido-id').value || 'p'+Date.now();
   const total = parseFloat(document.getElementById('p-total').value)||0;
   const pago  = parseFloat(document.getElementById('p-pago').value)||0;
+  const statusNovo = document.getElementById('p-status').value;
+  const ps  = load(K.P);
+  const idx = ps.findIndex(p=>p.id===id);
+  const existente = idx>=0 ? ps[idx] : null;
+  const agora = new Date().toISOString();
   const obj   = {
-    id, nome, dataEntrega, criado: new Date().toISOString(),
+    id, nome, dataEntrega,
+    criado:      existente?.criado || agora,
+    statusDesde: (existente && existente.status===statusNovo) ? (existente.statusDesde || existente.criado || agora) : agora,
     whatsapp:  document.getElementById('p-whatsapp').value,
-    status:    document.getElementById('p-status').value,
+    status:    statusNovo,
     produtos:  document.getElementById('p-produtos').value,
     qtd:       parseInt(document.getElementById('p-qtd').value)||1,
     total, pago, pendente: Math.max(0,total-pago),
     dataEvento:document.getElementById('p-data-evento').value,
     obs:       document.getElementById('p-obs').value,
     fotoUrl:   document.getElementById('p-foto-url').value,
+    alertaSnoozeAte:  existente?.alertaSnoozeAte  || '',
+    alertaSnoozeTipo: existente?.alertaSnoozeTipo || '',
   };
-  const ps  = load(K.P);
-  const idx = ps.findIndex(p=>p.id===id);
   if (idx>=0) ps[idx]=obj; else ps.push(obj);
   save(K.P, ps);
   closeModal('modal-pedido');
@@ -1895,6 +2081,9 @@ function renderAgendaList(tab){
 const active=p=>p.status!=='Entregue'&&p.status!=='Cancelado';
 
 /* ── FINANCEIRO ──────────────────────────────────── */
+let finReceitasExpandido = new Set([String(new Date().getFullYear())]);
+let finDespesasExpandido = new Set([String(new Date().getFullYear())]);
+
 function renderFinanceiro(){
   const{rec,gasto,pend}=calcFin();
   document.getElementById('fin-rec').textContent   =fmtM(rec);
@@ -1909,50 +2098,117 @@ function setFinTab(el){
   el.classList.add('active'); finTab=el.dataset.tab; renderFinanceiro();
 }
 
+function agruparPorAno(lista){
+  const porAno = {};
+  lista.forEach(item=>{
+    if(!item.data) return;
+    const ano = item.data.slice(0,4);
+    if(!porAno[ano]) porAno[ano] = [];
+    porAno[ano].push(item);
+  });
+  return porAno;
+}
+
+function toggleFinAno(tipo, ano){
+  const set = tipo==='receitas' ? finReceitasExpandido : finDespesasExpandido;
+  if(set.has(ano)) set.delete(ano); else set.add(ano);
+  renderFinList(finTab);
+}
+
+function renderPilhaReceitas(ano, itens){
+  const isOpen = finReceitasExpandido.has(ano);
+  const total = itens.reduce((s,r)=>s+(r.valor||0),0);
+  const ordenados = [...itens].sort((a,b)=>b.data.localeCompare(a.data));
+  return `
+    <div class="card" style="padding:0;margin-bottom:10px;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer" onclick="toggleFinAno('receitas','${ano}')">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-family:var(--font-display);font-size:18px;font-weight:600">${isOpen?'▾':'▸'} ${ano}</span>
+          <span style="font-size:12px;color:var(--text-soft)">${itens.length} receita${itens.length===1?'':'s'} · ${fmtM(total)}</span>
+        </div>
+        <span style="font-size:12px;color:var(--text-soft)">${isOpen?'recolher':'expandir'}</span>
+      </div>
+      ${isOpen?`<div style="border-top:1px solid var(--border-light);padding:0 20px">
+        ${ordenados.map(r=>`
+          <div class="tx-row">
+            <div class="tx-left">
+              <div class="tx-dot in"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
+              <div><div class="tx-desc">${r.ref||'Receita'}</div><div class="tx-date">${formatDate(r.data)}${r.cliente?' · '+r.cliente:''}</div></div>
+            </div>
+            <div style="text-align:right">
+              <div class="tx-amount in">+${fmtM(r.valor)}</div>
+              <button class="btn btn-ghost btn-sm" style="padding:4px 8px;margin-top:4px;font-size:11px" onclick="delReceita('${r.id}')">Remover</button>
+            </div>
+          </div>`).join('')}
+      </div>`:''}
+    </div>`;
+}
+
+function renderPilhaDespesas(ano, itens){
+  const isOpen = finDespesasExpandido.has(ano);
+  const total = itens.reduce((s,d)=>s+(d.valor||0),0);
+  const ordenados = [...itens].sort((a,b)=>b.data.localeCompare(a.data));
+  return `
+    <div class="card" style="padding:0;margin-bottom:10px;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer" onclick="toggleFinAno('despesas','${ano}')">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-family:var(--font-display);font-size:18px;font-weight:600">${isOpen?'▾':'▸'} ${ano}</span>
+          <span style="font-size:12px;color:var(--text-soft)">${itens.length} despesa${itens.length===1?'':'s'} · ${fmtM(total)}</span>
+        </div>
+        <span style="font-size:12px;color:var(--text-soft)">${isOpen?'recolher':'expandir'}</span>
+      </div>
+      ${isOpen?`<div style="border-top:1px solid var(--border-light);padding:0 20px">
+        ${ordenados.map(d=>`
+          <div class="tx-row">
+            <div class="tx-left">
+              <div class="tx-dot out"><svg viewBox="0 0 24 24"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></div>
+              <div><div class="tx-desc">${d.desc}</div><div class="tx-date">${formatDate(d.data)} · ${d.cat}</div></div>
+            </div>
+            <div style="text-align:right">
+              <div class="tx-amount out">-${fmtM(d.valor)}</div>
+              <button class="btn btn-ghost btn-sm" style="padding:4px 8px;margin-top:4px;font-size:11px" onclick="delDespesa('${d.id}')">Remover</button>
+            </div>
+          </div>`).join('')}
+      </div>`:''}
+    </div>`;
+}
+
 function renderFinList(tab){
   const el=document.getElementById('fin-list');
   if(tab==='receitas'){
-    const rs=load(K.R).sort((a,b)=>b.data.localeCompare(a.data));
-    if(!rs.length){el.innerHTML=emptyHTML('Nenhuma receita registrada.');return;}
-    el.innerHTML=rs.map(r=>`
-      <div class="tx-row">
-        <div class="tx-left">
-          <div class="tx-dot in"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
-          <div><div class="tx-desc">${r.ref||'Receita'}</div><div class="tx-date">${formatDate(r.data)}${r.cliente?' · '+r.cliente:''}</div></div>
-        </div>
-        <div style="text-align:right">
-          <div class="tx-amount in">+${fmtM(r.valor)}</div>
-          <button class="btn btn-ghost btn-sm" style="padding:4px 8px;margin-top:4px;font-size:11px" onclick="delReceita('${r.id}')">Remover</button>
-        </div>
-      </div>`).join('');
+    const rs=load(K.R);
+    if(!rs.length){el.innerHTML=`<div class="card">${emptyHTML('Nenhuma receita registrada.')}</div>`;return;}
+    const porAno = agruparPorAno(rs);
+    const anos = Object.keys(porAno).sort().reverse();
+    el.innerHTML = anos.map(ano=>renderPilhaReceitas(ano, porAno[ano])).join('');
   } else if(tab==='despesas'){
-    const ds=load(K.D).sort((a,b)=>b.data.localeCompare(a.data));
-    if(!ds.length){el.innerHTML=emptyHTML('Nenhuma despesa registrada.');return;}
-    el.innerHTML=ds.map(d=>`
-      <div class="tx-row">
-        <div class="tx-left">
-          <div class="tx-dot out"><svg viewBox="0 0 24 24"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></div>
-          <div><div class="tx-desc">${d.desc}</div><div class="tx-date">${formatDate(d.data)} · ${d.cat}</div></div>
-        </div>
-        <div style="text-align:right">
-          <div class="tx-amount out">-${fmtM(d.valor)}</div>
-          <button class="btn btn-ghost btn-sm" style="padding:4px 8px;margin-top:4px;font-size:11px" onclick="delDespesa('${d.id}')">Remover</button>
-        </div>
-      </div>`).join('');
+    const ds=load(K.D);
+    if(!ds.length){el.innerHTML=`<div class="card">${emptyHTML('Nenhuma despesa registrada.')}</div>`;return;}
+    const porAno = agruparPorAno(ds);
+    const anos = Object.keys(porAno).sort().reverse();
+    el.innerHTML = anos.map(ano=>renderPilhaDespesas(ano, porAno[ano])).join('');
   } else {
     const ps=load(K.P).filter(p=>p.pendente>0&&p.status!=='Cancelado').sort(sortByDate);
-    if(!ps.length){el.innerHTML=emptyHTML('Nenhum pagamento pendente.');return;}
-    el.innerHTML=ps.map(p=>`
+    if(!ps.length){el.innerHTML=`<div class="card">${emptyHTML('Nenhum pagamento pendente.')}</div>`;return;}
+    el.innerHTML=`<div class="card">${ps.map(p=>{
+      const wa = p.whatsapp ? `https://wa.me/55${p.whatsapp.replace(/\D/g,'')}` : null;
+      return `
       <div class="tx-row" onclick="openDetail('${p.id}')" style="cursor:pointer">
         <div class="tx-left">
           <div class="tx-dot out"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
           <div><div class="tx-desc">${p.nome}</div><div class="tx-date">Entrega: ${p.dataEntrega?formatDate(p.dataEntrega):'—'}</div></div>
         </div>
-        <div style="text-align:right">
-          <div class="tx-amount out">${fmtM(p.pendente)}</div>
-          <div style="font-size:11px;color:var(--text-soft)">de ${fmtM(p.total)}</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="text-align:right">
+            <div class="tx-amount out">${fmtM(p.pendente)}</div>
+            <div style="font-size:11px;color:var(--text-soft)">de ${fmtM(p.total)}</div>
+          </div>
+          ${wa?`<button class="btn-icon-wa" onclick="event.stopPropagation();window.open('${wa}','_blank')" title="WhatsApp">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          </button>`:''}
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('')}</div>`;
   }
 }
 
