@@ -15,37 +15,37 @@
 <style>
 /* ── TOKENS ─────────────────────────────────────── */
 :root {
-  --blue:        #8AAFC0;   /* dusty blue from logo */
-  --blue-dark:   #5C8399;
-  --blue-deep:   #3A5F72;
-  --blue-light:  #C8DCEA;
-  --blue-pale:   #EEF4F8;
-  --rose:        #C9848A;   /* blush rose from logo */
-  --rose-dark:   #A8646A;
-  --rose-light:  #E8B4B8;
-  --rose-pale:   #FDF0F1;
-  --cream:       #FAF7F3;   /* warm background */
-  --cream-dark:  #F0EBE3;
-  --gold:        #C8A96E;   /* gold ring in logo */
-  --text:        #2E2A26;
-  --text-mid:    #6B5F58;
-  --text-soft:   #9B9089;
+  --blue:        #4FA3D1;   /* vivid sky blue, from logo but brighter */
+  --blue-dark:   #2C7FB0;
+  --blue-deep:   #1E5C85;
+  --blue-light:  #A9DBF2;
+  --blue-pale:   #EAF7FC;
+  --rose:        #F0709A;   /* juicy pink/rose, from logo but saturated */
+  --rose-dark:   #E14B7E;
+  --rose-light:  #FBC1D6;
+  --rose-pale:   #FFEEF4;
+  --cream:       #FFF8F2;   /* warm, slightly pinker background */
+  --cream-dark:  #FBEADD;
+  --gold:        #E8B84B;   /* brighter gold ring */
+  --text:        #3A2A32;
+  --text-mid:    #7A5F6A;
+  --text-soft:   #AD8F98;
   --surface:     #FFFFFF;
-  --border:      #E5DDD6;
-  --border-light:#EDE8E3;
-  --success:     #7A9E7E;
-  --warning:     #C8A56E;
-  --danger:      #B87070;
+  --border:      #F3DDE4;
+  --border-light:#F8E9EE;
+  --success:     #4FB88A;
+  --warning:     #EFA23E;
+  --danger:      #E8506E;
   --info:        var(--blue);
 
   --r-sm: 10px;
   --r-md: 16px;
   --r-lg: 24px;
   --r-xl: 32px;
-  --shadow-xs: 0 1px 4px rgba(90,70,60,.07);
-  --shadow-sm: 0 2px 10px rgba(90,70,60,.10);
-  --shadow-md: 0 6px 24px rgba(90,70,60,.13);
-  --shadow-lg: 0 12px 40px rgba(90,70,60,.17);
+  --shadow-xs: 0 1px 4px rgba(180,60,100,.08);
+  --shadow-sm: 0 2px 10px rgba(180,60,100,.11);
+  --shadow-md: 0 6px 24px rgba(180,60,100,.14);
+  --shadow-lg: 0 12px 40px rgba(180,60,100,.18);
   --font-display: 'Cormorant Garamond', Georgia, serif;
   --font-body:    'DM Sans', system-ui, sans-serif;
   --font-script:  'Pinyon Script', cursive;
@@ -92,8 +92,9 @@ a { color: inherit; text-decoration: none; }
   content: '';
   position: absolute; inset: 0;
   background:
-    radial-gradient(ellipse 70% 40% at 20% 0%, rgba(138,175,192,.18) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 30% at 80% 100%, rgba(201,132,138,.14) 0%, transparent 60%);
+    radial-gradient(ellipse 70% 40% at 15% 0%, rgba(79,163,209,.20) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 45% at 85% 15%, rgba(240,112,154,.22) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 35% at 75% 100%, rgba(232,184,75,.14) 0%, transparent 60%);
   pointer-events: none;
 }
 .login-card {
@@ -197,12 +198,12 @@ select.form-control {
   white-space: nowrap;
 }
 .btn-primary {
-  background: var(--blue-dark);
+  background: linear-gradient(135deg, var(--blue-dark), var(--rose));
   color: white; width: 100%; padding: 14px;
   font-size: 14px; border-radius: var(--r-sm);
   letter-spacing: .5px;
 }
-.btn-primary:hover { background: var(--blue-deep); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+.btn-primary:hover { filter: brightness(1.06); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
 .btn-rose { background: var(--rose); color: white; }
 .btn-rose:hover { background: var(--rose-dark); }
 .btn-ghost { background: transparent; border: 1.5px solid var(--border); color: var(--text-mid); }
@@ -348,10 +349,10 @@ select.form-control {
   position: absolute; top: 0; left: 0; right: 0; height: 3px;
   background: var(--blue-light);
 }
-.stat-card.rose::before { background: var(--rose-light); }
-.stat-card.gold::before { background: var(--gold); opacity: .5; }
-.stat-card.green::before { background: var(--success); opacity: .6; }
-.stat-card.red::before { background: var(--danger); opacity: .6; }
+.stat-card.rose::before { background: var(--rose); }
+.stat-card.gold::before { background: var(--gold); }
+.stat-card.green::before { background: var(--success); }
+.stat-card.red::before { background: var(--danger); }
 .stat-card:hover { box-shadow: var(--shadow-sm); transform: translateY(-1px); }
 .stat-label { font-size: 11px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--text-soft); }
 .stat-value {
@@ -434,10 +435,10 @@ select.form-control {
   border: 1px solid transparent;
 }
 .badge-novo        { background: var(--blue-pale);  color: var(--blue-deep);  border-color: var(--blue-light); }
-.badge-emproducao  { background: #FEF6EB;             color: #8B5A1A;           border-color: #F2D9B0; }
-.badge-pronto      { background: #EDF5EE;             color: #2D6630;           border-color: #B8D9BB; }
-.badge-entregue    { background: #F5F0FA;             color: #5B3A8A;           border-color: #D4C4ED; }
-.badge-cancelado   { background: #FDF0F1;             color: var(--rose-dark);  border-color: var(--rose-light); }
+.badge-emproducao  { background: #FFF3E0;             color: #C0701A;           border-color: #FBD9A6; }
+.badge-pronto      { background: #E8F8EF;             color: #1F9C5C;           border-color: #A9E8C6; }
+.badge-entregue    { background: #F6EEFC;             color: #9256D9;           border-color: #E1C9F5; }
+.badge-cancelado   { background: var(--rose-pale);   color: var(--rose-dark);  border-color: var(--rose-light); }
 
 /* ── PEDIDO CARD ─────────────────────────────────── */
 .pedido-card {
@@ -643,14 +644,14 @@ select.form-control {
 .fab {
   position: fixed; bottom: 74px; right: 18px;
   width: 52px; height: 52px; border-radius: 50%;
-  background: var(--blue-dark);
+  background: linear-gradient(135deg, var(--blue-dark), var(--rose));
   border: none; color: white;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 18px rgba(92,131,153,.45);
+  box-shadow: 0 4px 18px rgba(225,75,126,.40);
   cursor: pointer; z-index: 100;
   transition: transform .18s, box-shadow .18s;
 }
-.fab:hover { transform: scale(1.07); box-shadow: 0 6px 24px rgba(92,131,153,.55); }
+.fab:hover { transform: scale(1.07); box-shadow: 0 6px 24px rgba(225,75,126,.5); }
 .fab svg { width: 24px; height: 24px; stroke: white; fill: none; stroke-width: 2.2; }
 
 /* ── TOAST ───────────────────────────────────────── */
@@ -748,7 +749,7 @@ select.form-control {
 
   window.fbSyncOnBoot = async function() {
     try {
-      const cols = { cdg_pedidos:'pedidos', cdg_receitas:'receitas', cdg_despesas:'despesas', cdg_vendas:'vendas' };
+      const cols = { cdg_pedidos:'pedidos', cdg_receitas:'receitas', cdg_despesas:'despesas', cdg_vendas:'vendas', cdg_materiais:'materiais', cdg_produtos:'produtos_catalogo', cdg_estoque_mov:'estoque_movimentacoes' };
       for (const [lsKey, colName] of Object.entries(cols)) {
         const items = await window.fbLoadCollection(colName);
         // Sempre sobrescreve o localStorage com os dados do Firestore (fonte da verdade)
@@ -837,7 +838,11 @@ select.form-control {
         </div>
       </div>
 
+      <div id="dash-fin-resumo"></div>
+
       <div id="dash-alertas"></div>
+
+      <div id="dash-estoque-baixo"></div>
 
       <div class="section-header">
         <span class="section-title">Hoje</span>
@@ -863,6 +868,9 @@ select.form-control {
 
     <!-- PEDIDOS -->
     <div class="screen" id="screen-pedidos">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+        <button class="see-all" onclick="navigate('clientes')">👤 Ver por cliente</button>
+      </div>
       <div class="search-wrap">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <input type="text" placeholder="Buscar cliente, tema, produto..." id="search-pedidos" oninput="filterPedidos()">
@@ -912,6 +920,7 @@ select.form-control {
         <button class="tab active" data-tab="receitas" onclick="setFinTab(this)">Receitas</button>
         <button class="tab" data-tab="despesas" onclick="setFinTab(this)">Despesas</button>
         <button class="tab" data-tab="pagamentos" onclick="setFinTab(this)">Pagamentos</button>
+        <button class="tab" data-tab="lucratividade" onclick="setFinTab(this)">Lucratividade</button>
       </div>
       <div id="fin-list"></div>
     </div>
@@ -923,6 +932,28 @@ select.form-control {
         <button class="tab" data-tab="avulso" onclick="setVendasTab(this)">Venda Avulsa</button>
       </div>
       <div id="vendas-content"></div>
+    </div>
+
+    <!-- PRODUTOS -->
+    <div class="screen" id="screen-produtos">
+      <div class="tabs">
+        <button class="tab active" data-tab="produtos" onclick="setProdutosTab(this)">Produtos</button>
+        <button class="tab" data-tab="materiais" onclick="setProdutosTab(this)">Materiais / Estoque</button>
+        <button class="tab" data-tab="relatorio" onclick="setProdutosTab(this)">Relatório</button>
+      </div>
+      <div id="produtos-content"></div>
+    </div>
+
+    <!-- CLIENTES -->
+    <div class="screen" id="screen-clientes">
+      <div style="margin-bottom:8px">
+        <button class="see-all" onclick="navigate('pedidos')">‹ Voltar para Pedidos</button>
+      </div>
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" placeholder="Buscar cliente..." id="search-clientes" oninput="renderClientes()">
+      </div>
+      <div id="list-clientes"></div>
     </div>
 
     <!-- CONFIG -->
@@ -939,6 +970,20 @@ select.form-control {
           <div class="cfg-left">
             <div class="cfg-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></div>
             <div><div class="cfg-text">Meta de faturamento mensal</div><div class="cfg-sub">Acompanhar progresso no Início</div></div>
+          </div>
+          <span class="cfg-arrow">›</span>
+        </div>
+        <div class="cfg-row" onclick="navigate('produtos')">
+          <div class="cfg-left">
+            <div class="cfg-icon"><svg viewBox="0 0 24 24"><path d="M20.59 13.41 13.42 20.6a2 2 0 0 1-2.83 0L2 12.01V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></div>
+            <div><div class="cfg-text">Produtos e Estoque</div><div class="cfg-sub">Cadastro de produtos, materiais e custos</div></div>
+          </div>
+          <span class="cfg-arrow">›</span>
+        </div>
+        <div class="cfg-row" onclick="navigate('clientes')">
+          <div class="cfg-left">
+            <div class="cfg-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+            <div><div class="cfg-text">Clientes e Fidelização</div><div class="cfg-sub">Histórico de compras por cliente</div></div>
           </div>
           <span class="cfg-arrow">›</span>
         </div>
@@ -1051,6 +1096,34 @@ select.form-control {
       <label class="form-label">Produtos vendidos</label>
       <input type="text" class="form-control" id="p-produtos" placeholder="Ex: Bolo + 50 docinhos + 100 bem-casados">
     </div>
+
+    <div class="form-group">
+      <label class="form-label">Itens do catálogo (opcional)</label>
+      <div id="p-itens-list" style="margin-bottom:10px"></div>
+      <div class="form-row" style="align-items:flex-end">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Produto</label>
+          <select class="form-control" id="p-item-produto"></select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Quantidade</label>
+          <input type="number" class="form-control" id="p-item-qtd" placeholder="1" value="1" step="1">
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%" onclick="addItemPedido()">+ Adicionar item</button>
+      <div class="card" id="p-itens-resumo" style="background:var(--blue-pale);border:none;box-shadow:none;padding:12px 14px;margin-top:10px;display:none"></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Outros custos de produção (R$)</label>
+      <input type="number" class="form-control" id="p-custos-extras" placeholder="0,00" step="0.01" oninput="renderItensPedidoResumo()">
+      <div style="font-size:11px;color:var(--text-soft);margin-top:6px">Ex: embalagem, transporte, mão de obra terceirizada...</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Descrição dos outros custos (opcional)</label>
+      <input type="text" class="form-control" id="p-custos-extras-desc" placeholder="Ex: entrega + embalagem especial">
+    </div>
+
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Quantidade</label>
@@ -1058,7 +1131,7 @@ select.form-control {
       </div>
       <div class="form-group">
         <label class="form-label">Valor total (R$)</label>
-        <input type="number" class="form-control" id="p-total" placeholder="0,00" oninput="calcPendente()">
+        <input type="number" class="form-control" id="p-total" placeholder="0,00" oninput="calcPendente();renderItensPedidoResumo()">
       </div>
     </div>
     <div class="form-row">
@@ -1102,7 +1175,7 @@ select.form-control {
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-pedido')">Cancelar</button>
-      <button class="btn btn-primary" style="background:var(--blue-dark)" onclick="savePedido()">Salvar pedido</button>
+      <button class="btn btn-primary" onclick="savePedido()">Salvar pedido</button>
     </div>
   </div>
 </div>
@@ -1121,6 +1194,7 @@ select.form-control {
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
       <button class="btn btn-ghost btn-sm" onclick="abrirMsgConfirmacao(currentDetailId)">📋 Msg confirmação</button>
       <button class="btn btn-ghost btn-sm" onclick="abrirRecibo(currentDetailId)">🧾 Recibo</button>
+      <button class="btn btn-ghost btn-sm" onclick="abrirClienteDoPedido(currentDetailId)">👤 Cliente</button>
     </div>
     <div id="det-body"></div>
     <div id="det-concluir-wrap" style="margin-top:18px;display:none">
@@ -1138,6 +1212,35 @@ select.form-control {
       <button class="btn btn-danger-ghost btn-sm btn-icon" onclick="deletePedidoFromDetail()">
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- CLIENTE (histórico e fidelização) -->
+<div class="modal-overlay" id="modal-cliente">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+      <div>
+        <div style="font-family:var(--font-display);font-size:22px;font-weight:600;color:var(--text)" id="cli-nome">—</div>
+        <div style="font-size:12px;color:var(--text-soft);margin-top:2px" id="cli-sub">—</div>
+      </div>
+      <span id="cli-badge"></span>
+    </div>
+
+    <div id="cli-stats" style="margin-bottom:6px"></div>
+
+    <div id="cli-fideliza" class="card" style="display:none;background:var(--rose-pale);border-color:var(--rose-light);margin-top:12px">
+      <div class="card-label" style="color:var(--rose-dark)">💌 Momento de fidelização</div>
+      <p class="fideliza-texto" style="font-size:13px;color:var(--text-mid);line-height:1.6;margin-bottom:12px"></p>
+      <button class="btn btn-rose btn-sm" style="width:100%" onclick="enviarMsgFidelizacao()">Enviar mensagem de agradecimento</button>
+    </div>
+
+    <div id="cli-atual" style="margin-top:16px"></div>
+    <div id="cli-historico"></div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('modal-cliente')">Fechar</button>
     </div>
   </div>
 </div>
@@ -1200,7 +1303,143 @@ select.form-control {
     <div class="form-group"><label class="form-label">Data *</label><input type="date" class="form-control" id="v-data"></div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-venda')">Cancelar</button>
-      <button class="btn btn-primary" style="background:var(--blue-dark)" onclick="saveVenda()">Salvar</button>
+      <button class="btn btn-primary" onclick="saveVenda()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- PRODUTO (catálogo) -->
+<div class="modal-overlay" id="modal-produto">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-produto-title">Novo produto</div>
+    <input type="hidden" id="pr-id">
+    <div class="form-group">
+      <label class="form-label">Nome do produto *</label>
+      <input type="text" class="form-control" id="pr-nome" placeholder="Ex: Polaroid personalizada">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Categoria</label>
+        <input type="text" class="form-control" id="pr-categoria" placeholder="Ex: Fotos">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-control" id="pr-status"><option>Ativo</option><option>Inativo</option></select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Descrição</label>
+      <textarea class="form-control" id="pr-desc" placeholder="Detalhes do produto..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Preço de venda (R$) *</label>
+      <input type="number" class="form-control" id="pr-preco" placeholder="0,00" step="0.01" oninput="renderComposicaoResumo()">
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Composição (materiais utilizados na produção)</label>
+      <div id="pr-comp-list" style="margin-bottom:10px"></div>
+      <div class="form-row" style="align-items:flex-end">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Material</label>
+          <select class="form-control" id="pr-comp-mat"></select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Qtd por unidade</label>
+          <input type="number" class="form-control" id="pr-comp-qtd" placeholder="1" step="0.01">
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%" onclick="addComposicaoItem()">+ Adicionar material</button>
+      <div style="font-size:12px;color:var(--text-soft);margin-top:8px">Deixe sem materiais se este produto for personalizado ou não tiver composição fixa.</div>
+    </div>
+
+    <div class="card" style="background:var(--blue-pale);border:none;box-shadow:none;padding:14px 16px;margin-top:6px">
+      <div class="meta-row"><span>Custo estimado de produção</span><b id="pr-custo-preview">R$ 0,00</b></div>
+      <div class="meta-row"><span>Preço de venda</span><b id="pr-preco-preview">R$ 0,00</b></div>
+      <div class="meta-row"><span>Margem de lucro estimada</span><b id="pr-margem-preview" style="color:var(--success)">R$ 0,00</b></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-produto')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveProduto()">Salvar produto</button>
+    </div>
+  </div>
+</div>
+
+<!-- MATERIAL (estoque) -->
+<div class="modal-overlay" id="modal-material">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-material-title">Novo material</div>
+    <input type="hidden" id="mat-id">
+    <div class="form-group">
+      <label class="form-label">Nome do material *</label>
+      <input type="text" class="form-control" id="mat-nome" placeholder="Ex: Papel fotográfico">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Unidade</label>
+        <select class="form-control" id="mat-unidade">
+          <option>unidade</option><option>g</option><option>kg</option><option>ml</option><option>l</option><option>m</option><option>cm</option><option>folha</option><option>pacote</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Custo unitário (R$) *</label>
+        <input type="number" class="form-control" id="mat-custo" placeholder="0,00" step="0.01">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Estoque atual</label>
+        <input type="number" class="form-control" id="mat-estoque" placeholder="0" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Estoque mínimo (alerta)</label>
+        <input type="number" class="form-control" id="mat-estoque-min" placeholder="0" step="0.01">
+      </div>
+    </div>
+    <div id="mat-historico"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-material')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveMaterial()">Salvar material</button>
+    </div>
+  </div>
+</div>
+
+<!-- ENTRADA DE ESTOQUE (compra de material) -->
+<div class="modal-overlay" id="modal-estoque-entrada">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Registrar entrada de estoque</div>
+    <div class="form-group">
+      <label class="form-label">Material *</label>
+      <select class="form-control" id="ee-mat" onchange="onEeMatChange()"></select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Quantidade comprada *</label>
+        <input type="number" class="form-control" id="ee-qtd" placeholder="0" step="0.01" oninput="updateEeTotalPreview()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Custo unitário (R$) *</label>
+        <input type="number" class="form-control" id="ee-custo" placeholder="0,00" step="0.01" oninput="updateEeTotalPreview()">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Data da compra</label>
+      <input type="date" class="form-control" id="ee-data">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Observação</label>
+      <input type="text" class="form-control" id="ee-obs" placeholder="Ex: Compra na papelaria X">
+    </div>
+    <div class="card" style="background:var(--blue-pale);border:none;box-shadow:none;padding:12px 16px;margin-top:6px">
+      <div class="meta-row"><span>Total da compra</span><b id="ee-total-preview">R$ 0,00</b></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-estoque-entrada')">Cancelar</button>
+      <button class="btn btn-success" onclick="saveEstoqueEntrada()">Registrar entrada</button>
     </div>
   </div>
 </div>
@@ -1257,7 +1496,7 @@ select.form-control {
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-perfil')">Cancelar</button>
-      <button class="btn btn-primary" style="background:var(--blue-dark)" onclick="savePerfil()">Salvar</button>
+      <button class="btn btn-primary" onclick="savePerfil()">Salvar</button>
     </div>
   </div>
 </div>
@@ -1273,7 +1512,7 @@ select.form-control {
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-meta')">Cancelar</button>
-      <button class="btn btn-primary" style="background:var(--blue-dark)" onclick="saveMeta()">Salvar</button>
+      <button class="btn btn-primary" onclick="saveMeta()">Salvar</button>
     </div>
   </div>
 </div>
@@ -1306,7 +1545,7 @@ select.form-control {
     <div class="form-group"><label class="form-label">Referência (ex: João 3:16)</label><input type="text" class="form-control" id="verse-edit-ref"></div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-verse')">Cancelar</button>
-      <button class="btn btn-primary" style="background:var(--blue-dark)" onclick="saveVerse()">Salvar</button>
+      <button class="btn btn-primary" onclick="saveVerse()">Salvar</button>
     </div>
   </div>
 </div>
@@ -1316,8 +1555,8 @@ select.form-control {
 ════════════════════════════════════════════════ -->
 <script>
 /* ── DATA STORE ─────────────────────────────────── */
-const K = { P:'cdg_pedidos', R:'cdg_receitas', D:'cdg_despesas', V:'cdg_vendas', C:'cdg_config', U:'cdg_user' };
-const COL_MAP = { cdg_pedidos:'pedidos', cdg_receitas:'receitas', cdg_despesas:'despesas', cdg_vendas:'vendas' };
+const K = { P:'cdg_pedidos', R:'cdg_receitas', D:'cdg_despesas', V:'cdg_vendas', C:'cdg_config', U:'cdg_user', M:'cdg_materiais', PR:'cdg_produtos', EM:'cdg_estoque_mov' };
+const COL_MAP = { cdg_pedidos:'pedidos', cdg_receitas:'receitas', cdg_despesas:'despesas', cdg_vendas:'vendas', cdg_materiais:'materiais', cdg_produtos:'produtos_catalogo', cdg_estoque_mov:'estoque_movimentacoes' };
 const load  = k => { try { return JSON.parse(localStorage.getItem(k)) || []; } catch { return []; } };
 const loadO = k => { try { return JSON.parse(localStorage.getItem(k)) || {}; } catch { return {}; } };
 
@@ -1358,9 +1597,12 @@ const fbDel = (colName, id) => {
 let currentUser = loadO(K.U);
 let appConfig   = loadO(K.C);
 let currentDetailId = null;
+let currentClienteKey = null;
 let currentScreen   = 'dashboard';
-let agendaTab = 'hoje', finTab = 'receitas', vendasTab = 'historico';
+let agendaTab = 'hoje', finTab = 'receitas', vendasTab = 'historico', produtosTab = 'produtos';
 let calDate = new Date();
+let composicaoAtual = [];   // materiais do produto sendo editado: {matId, qtd}
+let itensPedidoAtual = [];  // itens de catálogo do pedido sendo editado: {produtoId, produtoNome, qtd, precoUnit}
 
 /* ── DEMO DATA ───────────────────────────────────── */
 function initDemo() {
@@ -1369,12 +1611,13 @@ function initDemo() {
 }
 /* ── AUTH ────────────────────────────────────────── */
 const USERS = [{ email:'lanekun@gmail.com', senha:'graciosa' }];
+const getSenhaAtual = () => { appConfig = loadO(K.C); return appConfig.senhaCustom || USERS[0].senha; };
 
 function doLogin() {
   const email = 'lanekun@gmail.com';
   const pwd   = document.getElementById('login-password').value;
   if (!pwd) { showToast('Informe a senha'); return; }
-  if (!USERS.find(u => u.senha===pwd)) { showToast('Senha incorreta'); return; }
+  if (pwd !== getSenhaAtual()) { showToast('Senha incorreta'); return; }
 
   currentUser = { email };
   save(K.U, currentUser);
@@ -1437,7 +1680,7 @@ function showForgot() {
 }
 
 /* ── NAVIGATION ──────────────────────────────────── */
-const screenTitles = { dashboard:null, pedidos:'Pedidos', agenda:'Agenda', financeiro:'Financeiro', vendas:'Vendas', config:'Configurações' };
+const screenTitles = { dashboard:null, pedidos:'Pedidos', agenda:'Agenda', financeiro:'Financeiro', vendas:'Vendas', produtos:'Produtos & Estoque', clientes:'Clientes', config:'Configurações' };
 
 function navigate(s, param) {
   currentScreen = s;
@@ -1466,6 +1709,8 @@ function navigate(s, param) {
   if (s==='agenda')      { renderCalendar(); renderAgendaList(agendaTab); }
   if (s==='financeiro')  renderFinanceiro();
   if (s==='vendas')      renderVendas();
+  if (s==='produtos')    renderProdutosScreen();
+  if (s==='clientes')    renderClientes();
 }
 
 function goToScreen(s, filter) { navigate(s, filter); }
@@ -1476,7 +1721,9 @@ function handleTopAction() { document.getElementById('search-pedidos')?.focus();
 function renderDashboard() {
   renderAvisosEntrega();
   renderMetaCard();
+  renderFinResumoDashboard();
   renderAlertasDashboard();
+  renderEstoqueBaixoDashboard();
 
   const pedidos  = load(K.P);
   const today    = todayStr();
@@ -1537,7 +1784,12 @@ function renderAvisosEntrega() {
       <div class="aviso-acoes">
         <button class="btn btn-ghost btn-sm" onclick="openDetail('${p.id}')">Ver</button>
         ${wa ? `<button class="btn btn-ghost btn-sm" onclick="window.open('${wa}','_blank')">WhatsApp</button>` : ''}
-        <button class="btn btn-success btn-sm" onclick="marcarEntregueRapido('${p.id}')">Concluir</button>
+        <select class="form-control" style="width:auto;padding:7px 26px 7px 10px;font-size:12px" onchange="mudarStatusRapido('${p.id}',this.value)" onclick="event.stopPropagation()">
+          <option value="Novo" ${p.status==='Novo'?'selected':''}>Novo</option>
+          <option value="Em Produção" ${p.status==='Em Produção'?'selected':''}>Em Produção</option>
+          <option value="Pronto" ${p.status==='Pronto'?'selected':''}>Pronto</option>
+          <option value="Entregue">Concluir (Entregue)</option>
+        </select>
       </div>
     </div>`;
   };
@@ -1551,6 +1803,20 @@ function renderAvisosEntrega() {
 function marcarEntregueRapido(id) {
   currentDetailId = id;
   concluirPedido();
+}
+
+function mudarStatusRapido(id, novoStatus) {
+  if (!novoStatus) return;
+  if (novoStatus === 'Entregue') { marcarEntregueRapido(id); return; }
+  const ps = load(K.P);
+  const idx = ps.findIndex(p => p.id === id);
+  if (idx < 0) return;
+  if (ps[idx].status !== novoStatus) ps[idx].statusDesde = new Date().toISOString();
+  ps[idx].status = novoStatus;
+  save(K.P, ps);
+  renderDashboard();
+  if (currentScreen === 'pedidos') filterPedidos();
+  showToast('Status de "' + (ps[idx].nome||'pedido') + '" atualizado para ' + novoStatus + '.');
 }
 
 /* ── META DO MÊS ─────────────────────────────────── */
@@ -1568,7 +1834,9 @@ function renderMetaCard() {
 
   const now = new Date();
   const mesAtual = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  const recebidoMes = load(K.R).filter(r => r.data && r.data.startsWith(mesAtual)).reduce((s,r) => s + (r.valor||0), 0);
+  const recebidoMesReceitas = load(K.R).filter(r => r.data && r.data.startsWith(mesAtual)).reduce((s,r) => s + (r.valor||0), 0);
+  const recebidoMesVendas   = load(K.V).filter(v => v.data && v.data.startsWith(mesAtual)).reduce((s,v) => s + (v.valor||0), 0);
+  const recebidoMes = recebidoMesReceitas + recebidoMesVendas;
   const pct = Math.min(Math.round(recebidoMes / meta * 100), 100);
   const falta = Math.max(meta - recebidoMes, 0);
   const raio = 40, circ = 2 * Math.PI * raio, arco = circ * (1 - pct/100);
@@ -1608,6 +1876,62 @@ function saveMeta() {
   closeModal('modal-meta');
   renderMetaCard();
   showToast('Meta atualizada.');
+}
+
+/* ── RESUMO FINANCEIRO DO MÊS (faturamento, lucro, a receber) ───── */
+function renderFinResumoDashboard() {
+  const el = document.getElementById('dash-fin-resumo');
+  const { rec, gasto, pend, recReceitas, recVendas } = calcFin();
+  const lucro = rec - gasto;
+  el.innerHTML = `
+    <div class="section-header" style="margin-top:2px">
+      <span class="section-title">Resumo do mês</span>
+      <button class="see-all" onclick="navigate('financeiro')">Ver financeiro</button>
+    </div>
+    <div class="fin-grid">
+      <div class="fin-tile" onclick="navigate('financeiro')" style="cursor:pointer">
+        <div class="fin-tile-label">Faturamento</div>
+        <div class="fin-tile-value blue">${fmtM(rec)}</div>
+        ${recVendas>0?`<div style="font-size:10px;color:var(--text-soft);margin-top:3px">${fmtM(recReceitas)} receitas + ${fmtM(recVendas)} avulsas</div>`:''}
+      </div>
+      <div class="fin-tile" onclick="navigate('financeiro')" style="cursor:pointer">
+        <div class="fin-tile-label">Lucro estimado</div>
+        <div class="fin-tile-value ${lucro>=0?'green':'red'}">${fmtM(lucro)}</div>
+      </div>
+      <div class="fin-tile" onclick="goToScreen('financeiro')" style="cursor:pointer">
+        <div class="fin-tile-label">A receber</div>
+        <div class="fin-tile-value gold">${fmtM(pend)}</div>
+      </div>
+      <div class="fin-tile" onclick="navigate('financeiro')" style="cursor:pointer">
+        <div class="fin-tile-label">Gasto do mês</div>
+        <div class="fin-tile-value red">${fmtM(gasto)}</div>
+      </div>
+    </div>`;
+}
+
+/* ── ESTOQUE BAIXO NO DASHBOARD ───────────────────── */
+function renderEstoqueBaixoDashboard() {
+  const el = document.getElementById('dash-estoque-baixo');
+  const mats = load(K.M).filter(m => (m.estoqueMin||0) > 0 && (m.estoque||0) <= (m.estoqueMin||0));
+  if (!mats.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <div class="section-header" style="margin-top:6px">
+      <span class="section-title" style="color:var(--danger)">📦 Estoque baixo</span>
+      <button class="see-all" onclick="navigate('produtos')">Ver materiais</button>
+    </div>
+    <div class="card" style="padding:4px 20px">
+      ${mats.map(m => `
+        <div class="tx-row">
+          <div class="tx-left"><div class="tx-desc">${m.nome}</div></div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="text-align:right">
+              <div style="font-size:13px;color:var(--danger);font-weight:600">${m.estoque||0} ${m.unidade||''}</div>
+              <div style="font-size:11px;color:var(--text-soft)">mín. ${m.estoqueMin} ${m.unidade||''}</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="openEstoqueEntradaModal('${m.id}')">+ Entrada</button>
+          </div>
+        </div>`).join('')}
+    </div>`;
 }
 
 /* ── ALERTAS (pedido parado, saldo pendente, risco de prazo) ───── */
@@ -1743,6 +2067,35 @@ function pedidoCardHTML(p) {
   </div>`;
 }
 
+// Calcula o breakdown financeiro completo de um pedido: materiais, outros custos, lucro bruto e margem
+function calcLucroPedido(p){
+  const { detalhes, custoTotal: custoMateriais } = calcMateriaisItens(p.itens||[]);
+  const custoExtras = p.custosExtras||0;
+  const custoTotal  = custoMateriais + custoExtras;
+  const lucroBruto  = (p.total||0) - custoTotal;
+  const margem      = p.total>0 ? (lucroBruto/p.total*100) : 0;
+  return { detalhes, custoMateriais, custoExtras, custoTotal, lucroBruto, margem };
+}
+
+// Mostra o custo real (materiais + outros custos) e o lucro real de um pedido
+function renderCustoRealPedido(p){
+  const temItens  = p.itens && p.itens.length;
+  const temExtras = (p.custosExtras||0) > 0;
+  if (!temItens && !temExtras) return '';
+  const { detalhes, custoMateriais, custoExtras, lucroBruto, margem } = calcLucroPedido(p);
+  return `
+    <div class="card" style="background:var(--blue-pale);border:none;box-shadow:none;padding:14px 16px;margin-top:14px">
+      <div class="card-label" style="margin-bottom:8px">Financeiro do pedido</div>
+      <div class="meta-row"><span>Valor pago pelo cliente</span><b style="color:var(--success)">${fmtM(p.pago)}</b></div>
+      <div class="meta-row"><span>Custo dos materiais</span><b style="color:var(--danger)">${fmtM(custoMateriais)}</b></div>
+      <div class="meta-row"><span>Outros custos${p.custosExtrasDesc?' ('+p.custosExtrasDesc+')':''}</span><b style="color:var(--danger)">${fmtM(custoExtras)}</b></div>
+      <div class="meta-row"><span>Preço de venda (total)</span><b>${fmtM(p.total)}</b></div>
+      <div class="meta-row"><span>Lucro bruto real</span><b style="color:${lucroBruto>=0?'var(--success)':'var(--danger)'}">${fmtM(lucroBruto)}</b></div>
+      <div class="meta-row"><span>Margem de lucro</span><b style="color:${margem>=0?'var(--success)':'var(--danger)'}">${margem.toFixed(1)}%</b></div>
+      ${detalhes.length?`<div style="font-size:11px;color:var(--text-soft);margin-top:8px">Insumos: ${detalhes.map(d=>`${d.nome} (${d.qtd} ${d.unidade})`).join(', ')}</div>`:''}
+    </div>`;
+}
+
 function openDetail(id) {
   const p = load(K.P).find(p=>p.id===id);
   if (!p) return;
@@ -1771,6 +2124,7 @@ function openDetail(id) {
       <div class="progress-legend"><span>0%</span><span style="color:var(--blue-dark);font-weight:600">${pct}% pago</span><span>100%</span></div>
     </div>
     ${p.obs?`<div class="detail-row"><span class="detail-key">Observações</span><span class="detail-val">${p.obs}</span></div>`:''}
+    ${renderCustoRealPedido(p)}
   `;
   // Mostrar botão concluir só se não for Entregue ou Cancelado
   const wrap = document.getElementById('det-concluir-wrap');
@@ -1799,13 +2153,18 @@ function concluirPedido() {
   openModal('modal-concluir');
 }
 
-function _finalizarPedido() {
+function _finalizarPedido(valorRecebidoAgora) {
   const ps = load(K.P);
   const idx = ps.findIndex(p => p.id === currentDetailId);
   if (idx >= 0) {
+    const total = ps[idx].total || 0;
+    // Só soma ao valor pago o que foi de fato lançado agora (não força quitação total)
+    if (valorRecebidoAgora) {
+      const novoPago = (ps[idx].pago || 0) + valorRecebidoAgora;
+      ps[idx].pago = total > 0 ? Math.min(total, novoPago) : novoPago;
+    }
     ps[idx].status = 'Entregue';
-    ps[idx].pago = ps[idx].total || ps[idx].pago || 0;
-    ps[idx].pendente = 0;
+    ps[idx].pendente = Math.max(0, total - (ps[idx].pago || 0));
     save(K.P, ps);
   }
   currentDetailId = null;
@@ -1815,7 +2174,7 @@ function _finalizarPedido() {
 }
 
 function concluirSemReceita() {
-  _finalizarPedido();
+  _finalizarPedido(0);
   showToast('Pedido marcado como Entregue.');
 }
 
@@ -1833,16 +2192,18 @@ function concluirComReceita() {
     ref: 'Pedido concluído' + (p?.produtos ? ' · ' + p.produtos.slice(0,40) : '')
   });
   save(K.R, rs);
-  _finalizarPedido();
+  _finalizarPedido(valor);
   showToast('Pedido concluído e receita lançada!');
 }
 
 function deletePedidoFromDetail() {
   if (!currentDetailId) { showToast('Erro: pedido não identificado.'); return; }
   if (!confirm('Excluir este pedido?')) return;
+  const pedidoExcluido = load(K.P).find(p => p.id === currentDetailId);
   fbDel('pedidos', currentDetailId);
   const ps = load(K.P).filter(p => p.id !== currentDetailId);
   save(K.P, ps);
+  aplicarConsumoEstoque(pedidoExcluido?.itens, []);
   currentDetailId = null;
   closeModal('modal-detalhe');
   if (currentScreen === 'pedidos') filterPedidos();
@@ -1919,6 +2280,155 @@ function abrirRecibo(id) {
   abrirModalMsg('🧾 Recibo', gerarReciboPedido(p), wa);
 }
 
+/* ── CLIENTES (histórico de compras e fidelização) ────────── */
+function getClienteKey(p) {
+  if (p.whatsapp) {
+    const d = p.whatsapp.replace(/\D/g, '');
+    if (d) return 'wa:' + d;
+  }
+  return 'nm:' + (p.nome || '').trim().toLowerCase();
+}
+
+function aggregateClientes() {
+  const pedidos = load(K.P);
+  const map = {};
+  pedidos.forEach(p => {
+    const key = getClienteKey(p);
+    if (!map[key]) map[key] = { key, nome: p.nome, whatsapp: p.whatsapp, pedidos: [] };
+    map[key].pedidos.push(p);
+    if (p.nome)     map[key].nome     = p.nome;
+    if (p.whatsapp) map[key].whatsapp = p.whatsapp;
+  });
+  return Object.values(map).map(c => {
+    const validos = c.pedidos.filter(p => p.status !== 'Cancelado');
+    const totalGasto = validos.reduce((s, p) => s + (p.total || 0), 0);
+    const datas = validos.map(p => p.dataEntrega).filter(Boolean).sort();
+    return {
+      ...c,
+      qtdPedidos: validos.length,
+      totalGasto,
+      ultimaCompra: datas.length ? datas[datas.length - 1] : null,
+      primeiraCompra: datas.length ? datas[0] : null
+    };
+  }).sort((a, b) => (b.ultimaCompra || '').localeCompare(a.ultimaCompra || ''));
+}
+
+// Regras simples de fidelização — ajustável conforme o negócio crescer
+function fidelidadeInfo(c) {
+  if (c.qtdPedidos >= 5 || c.totalGasto >= 1500) return { tier: 'ouro',  label: 'Cliente Ouro ✨' };
+  if (c.qtdPedidos >= 3 || c.totalGasto >= 600)  return { tier: 'prata', label: 'Cliente Fiel 💛' };
+  return null;
+}
+
+function tempoDesde(dataStr) {
+  if (!dataStr) return '—';
+  const meses = Math.max(0, Math.round((new Date(todayStr()) - new Date(dataStr)) / (1000 * 60 * 60 * 24 * 30)));
+  if (meses < 1)  return 'menos de 1 mês';
+  if (meses < 12) return meses + ' mês' + (meses === 1 ? '' : 'es');
+  const anos = Math.floor(meses / 12), restM = meses % 12;
+  return anos + ' ano' + (anos === 1 ? '' : 's') + (restM ? ` e ${restM}m` : '');
+}
+
+function renderClientes() {
+  const q = (document.getElementById('search-clientes')?.value || '').toLowerCase();
+  const clientes = aggregateClientes().filter(c => !q || (c.nome || '').toLowerCase().includes(q));
+  document.getElementById('list-clientes').innerHTML = clientes.length
+    ? clientes.map(clienteCardHTML).join('')
+    : emptyHTML('Nenhum cliente encontrado.<br><strong>Clientes aparecem aqui após o primeiro pedido.</strong>');
+}
+
+function clienteCardHTML(c) {
+  const fid = fidelidadeInfo(c);
+  const wa  = c.whatsapp ? `https://wa.me/55${c.whatsapp.replace(/\D/g, '')}` : null;
+  return `
+  <div class="pedido-card" onclick="openClienteDetail('${c.key}')">
+    <div class="pedido-card-header">
+      <div>
+        <div class="pedido-nome">${c.nome || '—'}</div>
+        <div class="pedido-sub">${c.qtdPedidos} pedido${c.qtdPedidos === 1 ? '' : 's'} · última compra ${c.ultimaCompra ? formatDate(c.ultimaCompra) : '—'}</div>
+      </div>
+      ${fid ? `<span class="badge badge-pronto">${fid.label}</span>` : ''}
+    </div>
+    <div class="pedido-meta">
+      <span class="pedido-meta-item">Total gasto: ${fmtM(c.totalGasto)}</span>
+      <div style="margin-left:auto">
+        ${wa ? `<button class="btn-icon-wa" onclick="event.stopPropagation();window.open('${wa}','_blank')" title="WhatsApp">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        </button>` : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function openClienteDetail(key) {
+  const c = aggregateClientes().find(x => x.key === key);
+  if (!c) return;
+  currentClienteKey = key;
+  const fid = fidelidadeInfo(c);
+  const ordenados = [...c.pedidos].sort((a, b) => (b.dataEntrega || '').localeCompare(a.dataEntrega || ''));
+  const atual = ordenados.find(p => ['Novo', 'Em Produção', 'Pronto'].includes(p.status)) || ordenados[0];
+  const historico = atual ? ordenados.filter(p => p.id !== atual.id) : ordenados;
+
+  document.getElementById('cli-nome').textContent = c.nome || '—';
+  document.getElementById('cli-sub').textContent   = c.whatsapp ? ('WhatsApp: ' + c.whatsapp) : 'Sem WhatsApp cadastrado';
+  document.getElementById('cli-badge').innerHTML   = fid ? `<span class="badge badge-pronto">${fid.label}</span>` : '';
+
+  document.getElementById('cli-stats').innerHTML = `
+    <div class="fin-grid">
+      <div class="fin-tile"><div class="fin-tile-label">Total gasto</div><div class="fin-tile-value green">${fmtM(c.totalGasto)}</div></div>
+      <div class="fin-tile"><div class="fin-tile-label">Pedidos</div><div class="fin-tile-value blue">${c.qtdPedidos}</div></div>
+      <div class="fin-tile"><div class="fin-tile-label">Última compra</div><div class="fin-tile-value gold" style="font-size:15px">${c.ultimaCompra ? formatDate(c.ultimaCompra) : '—'}</div></div>
+      <div class="fin-tile"><div class="fin-tile-label">Cliente desde</div><div class="fin-tile-value" style="font-size:13px">${tempoDesde(c.primeiraCompra)}</div></div>
+    </div>`;
+
+  document.getElementById('cli-atual').innerHTML = atual ? `
+    <div class="card-label">Pedido em destaque</div>
+    ${pedidoCardHTML(atual)}
+  ` : '';
+
+  document.getElementById('cli-historico').innerHTML = `
+    <div class="card-label" style="margin-top:16px">Histórico de compras</div>
+    ${historico.length ? historico.map(p => pedidoCardHTML(p)).join('') : emptyHTML('Nenhuma outra compra registrada ainda.')}
+  `;
+
+  const fidWrap = document.getElementById('cli-fideliza');
+  if (fid) {
+    fidWrap.style.display = 'block';
+    fidWrap.querySelector('.fideliza-texto').textContent =
+      `${c.nome || 'Este cliente'} já é ${fid.label.replace(/[✨💛]/g,'').trim()}, com ${c.qtdPedidos} pedido${c.qtdPedidos===1?'':'s'} e ${fmtM(c.totalGasto)} em compras. Que tal um mimo de agradecimento?`;
+  } else {
+    fidWrap.style.display = 'none';
+  }
+
+  openModal('modal-cliente');
+}
+
+function abrirClienteDoPedido(id) {
+  const p = load(K.P).find(x => x.id === id);
+  if (!p) { showToast('Pedido não encontrado.'); return; }
+  const key = getClienteKey(p);
+  closeModal('modal-detalhe');
+  openClienteDetail(key);
+}
+
+function gerarMsgFidelizacao(c) {
+  const linhas = [
+    `Oi ${c.nome || ''}! 🎀`,
+    '',
+    'Obrigada por confiar no meu trabalho durante todo esse tempo.',
+    'É um prazer poder registrar momentos tão importantes para você e sua família.',
+    `Esse mimo é uma pequena forma de agradecer pela sua fidelidade — já são ${c.qtdPedidos} pedido${c.qtdPedidos===1?'':'s'} juntas. 💛`
+  ];
+  return linhas.join('\n');
+}
+
+function enviarMsgFidelizacao() {
+  const c = aggregateClientes().find(x => x.key === currentClienteKey);
+  if (!c) return;
+  const wa = c.whatsapp ? `https://wa.me/55${c.whatsapp.replace(/\D/g, '')}` : null;
+  abrirModalMsg('💌 Mensagem de fidelização', gerarMsgFidelizacao(c), wa);
+}
+
 function openPedidoModal(p=null) {
   document.getElementById('modal-pedido-title').textContent = p ? 'Editar pedido' : 'Novo pedido';
   const set = (id, val) => { document.getElementById(id).value = val||''; };
@@ -1928,6 +2438,7 @@ function openPedidoModal(p=null) {
   set('p-qtd',p?.qtd||1); set('p-total',p?.total); set('p-pago',p?.pago);
   set('p-pendente',p?.pendente); set('p-data-evento',p?.dataEvento);
   set('p-data-entrega',p?.dataEntrega); set('p-obs',p?.obs);
+  set('p-custos-extras',p?.custosExtras); set('p-custos-extras-desc',p?.custosExtrasDesc);
   // foto
   const fotoUrl = p?.fotoUrl||''
   set('p-foto-url', fotoUrl);
@@ -1940,6 +2451,9 @@ function openPedidoModal(p=null) {
     document.getElementById('upload-preview').style.display = 'none';
     document.getElementById('upload-placeholder').style.display = 'block';
   }
+  itensPedidoAtual = p?.itens ? JSON.parse(JSON.stringify(p.itens)) : [];
+  populateProdutoSelectPedido();
+  renderItensPedidoList();
   openModal('modal-pedido');
 }
 
@@ -2024,14 +2538,525 @@ function savePedido() {
     dataEvento:document.getElementById('p-data-evento').value,
     obs:       document.getElementById('p-obs').value,
     fotoUrl:   document.getElementById('p-foto-url').value,
+    itens:     itensPedidoAtual,
+    custosExtras:     parseFloat(document.getElementById('p-custos-extras').value)||0,
+    custosExtrasDesc: document.getElementById('p-custos-extras-desc').value,
     alertaSnoozeAte:  existente?.alertaSnoozeAte  || '',
     alertaSnoozeTipo: existente?.alertaSnoozeTipo || '',
   };
   if (idx>=0) ps[idx]=obj; else ps.push(obj);
   save(K.P, ps);
+  aplicarConsumoEstoque(existente?.itens, itensPedidoAtual);
   closeModal('modal-pedido');
   currentScreen==='pedidos' ? filterPedidos() : renderDashboard();
   showToast('Pedido salvo.');
+}
+
+/* ── PRODUTOS E MATERIAIS (ESTOQUE) ──────────────── */
+function renderProdutosScreen(){ renderProdutosContent(produtosTab); }
+
+function setProdutosTab(el){
+  document.querySelectorAll('#screen-produtos .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active'); produtosTab = el.dataset.tab; renderProdutosContent(produtosTab);
+}
+
+function renderProdutosContent(tab){
+  const el = document.getElementById('produtos-content');
+  if (tab==='produtos'){
+    const prods = load(K.PR);
+    el.innerHTML = prods.length ? prods.map(p=>produtoCardHTML(p)).join('') : emptyHTML('Nenhum produto cadastrado.<br><strong>Toque no + para adicionar.</strong>');
+  } else if (tab==='materiais'){
+    const mats = load(K.M);
+    const btnEntrada = `<button class="btn btn-primary" style="width:100%;margin-bottom:14px" onclick="openEstoqueEntradaModal()">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Registrar entrada de estoque
+    </button>`;
+    el.innerHTML = btnEntrada + (mats.length ? mats.map(m=>materialCardHTML(m)).join('') : emptyHTML('Nenhum material cadastrado.<br><strong>Toque no + para adicionar.</strong>'));
+  } else {
+    el.innerHTML = renderRelatorioEstoque();
+  }
+}
+
+// Custo de uma composição (lista de {matId, qtd}) com base no custo unitário atual de cada material
+function custoComposicao(comp){
+  const mats = load(K.M);
+  return (comp||[]).reduce((s,c)=>{
+    const m = mats.find(x=>x.id===c.matId);
+    return s + (m ? (m.custo||0)*(c.qtd||0) : 0);
+  }, 0);
+}
+
+function produtoCardHTML(p){
+  const custo  = custoComposicao(p.composicao);
+  const margem = (p.preco||0) - custo;
+  const ativo  = p.status !== 'Inativo';
+  return `
+  <div class="pedido-card" onclick="openProdutoById('${p.id}')">
+    <div class="pedido-card-header">
+      <div>
+        <div class="pedido-nome">${p.nome}</div>
+        <div class="pedido-sub">${p.categoria||'—'}${p.composicao&&p.composicao.length?' · '+p.composicao.length+' material(is)':' · sem composição fixa'}</div>
+      </div>
+      <span class="badge ${ativo?'badge-pronto':'badge-cancelado'}">${ativo?'Ativo':'Inativo'}</span>
+    </div>
+    <div class="pedido-meta">
+      <span class="pedido-meta-item">Venda: ${fmtM(p.preco)}</span>
+      <span class="pedido-meta-item">Custo: ${fmtM(custo)}</span>
+      <span class="pedido-meta-item" style="color:${margem>=0?'var(--success)':'var(--danger)'};font-weight:600">Margem: ${fmtM(margem)}</span>
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="event.stopPropagation();deleteProduto('${p.id}')">Excluir</button>
+    </div>
+  </div>`;
+}
+
+function materialCardHTML(m){
+  const baixo = (m.estoqueMin||0) > 0 && (m.estoque||0) <= (m.estoqueMin||0);
+  return `
+  <div class="pedido-card" onclick="openMaterialById('${m.id}')">
+    <div class="pedido-card-header">
+      <div>
+        <div class="pedido-nome">${m.nome}</div>
+        <div class="pedido-sub">${m.unidade||'unidade'} · custo unit.: ${fmtM(m.custo)}</div>
+      </div>
+      ${baixo?'<span class="badge badge-cancelado">Estoque baixo</span>':''}
+    </div>
+    <div class="pedido-meta">
+      <span class="pedido-meta-item">Estoque atual: ${m.estoque||0} ${m.unidade||''}</span>
+      <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openEstoqueEntradaModal('${m.id}')">+ Entrada</button>
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();deleteMaterial('${m.id}')">Excluir</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function openProdutoById(id){ const p = load(K.PR).find(x=>x.id===id); if(p) openProdutoModal(p); }
+function openMaterialById(id){ const m = load(K.M).find(x=>x.id===id); if(m) openMaterialModal(m); }
+
+/* -- Produto: modal e composição -- */
+function openProdutoModal(p=null){
+  document.getElementById('modal-produto-title').textContent = p ? 'Editar produto' : 'Novo produto';
+  document.getElementById('pr-id').value        = p?.id || '';
+  document.getElementById('pr-nome').value      = p?.nome || '';
+  document.getElementById('pr-categoria').value = p?.categoria || '';
+  document.getElementById('pr-status').value    = p?.status || 'Ativo';
+  document.getElementById('pr-desc').value      = p?.descricao || '';
+  document.getElementById('pr-preco').value     = p?.preco || '';
+  composicaoAtual = p?.composicao ? JSON.parse(JSON.stringify(p.composicao)) : [];
+  populateMaterialSelect();
+  renderComposicaoList();
+  openModal('modal-produto');
+}
+
+function populateMaterialSelect(){
+  const mats = load(K.M);
+  const sel = document.getElementById('pr-comp-mat');
+  sel.innerHTML = mats.length
+    ? mats.map(m=>`<option value="${m.id}">${m.nome} (${fmtM(m.custo)}/${m.unidade||'un'})</option>`).join('')
+    : '<option value="">Cadastre um material primeiro</option>';
+}
+
+function renderComposicaoList(){
+  const mats = load(K.M);
+  const el = document.getElementById('pr-comp-list');
+  el.innerHTML = composicaoAtual.length ? composicaoAtual.map((c,i)=>{
+    const m = mats.find(x=>x.id===c.matId);
+    return `<div class="tx-row" style="padding:8px 0">
+      <div class="tx-left"><div style="font-size:13px">${m?m.nome:'Material removido'} — ${c.qtd} ${m?.unidade||''}</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:12px;color:var(--text-soft)">${fmtM(m?(m.custo*c.qtd):0)}</span>
+        <button class="btn btn-ghost btn-sm" onclick="removeComposicaoItem(${i})">Remover</button>
+      </div>
+    </div>`;
+  }).join('') : '<div style="font-size:12px;color:var(--text-soft)">Nenhum material adicionado ainda.</div>';
+  renderComposicaoResumo();
+}
+
+function addComposicaoItem(){
+  const matId = document.getElementById('pr-comp-mat').value;
+  const qtd   = parseFloat(document.getElementById('pr-comp-qtd').value);
+  if (!matId){ showToast('Cadastre um material primeiro'); return; }
+  if (!qtd || qtd<=0){ showToast('Informe a quantidade'); return; }
+  const idx = composicaoAtual.findIndex(c=>c.matId===matId);
+  if (idx>=0) composicaoAtual[idx].qtd += qtd; else composicaoAtual.push({ matId, qtd });
+  document.getElementById('pr-comp-qtd').value = '';
+  renderComposicaoList();
+}
+function removeComposicaoItem(i){ composicaoAtual.splice(i,1); renderComposicaoList(); }
+
+function renderComposicaoResumo(){
+  const custo = custoComposicao(composicaoAtual);
+  const preco = parseFloat(document.getElementById('pr-preco').value)||0;
+  document.getElementById('pr-custo-preview').textContent = fmtM(custo);
+  document.getElementById('pr-preco-preview').textContent = fmtM(preco);
+  const margem = preco-custo;
+  const mEl = document.getElementById('pr-margem-preview');
+  mEl.textContent = fmtM(margem);
+  mEl.style.color = margem>=0 ? 'var(--success)' : 'var(--danger)';
+}
+
+function saveProduto(){
+  const nome  = document.getElementById('pr-nome').value.trim();
+  const preco = parseFloat(document.getElementById('pr-preco').value)||0;
+  if (!nome){ showToast('Informe o nome do produto'); return; }
+  const id = document.getElementById('pr-id').value || 'pr'+Date.now();
+  const custo = custoComposicao(composicaoAtual);
+  const obj = {
+    id, nome,
+    categoria:  document.getElementById('pr-categoria').value.trim(),
+    status:     document.getElementById('pr-status').value,
+    descricao:  document.getElementById('pr-desc').value,
+    preco,
+    composicao: composicaoAtual,
+    custoEstimado: custo,
+    margem: preco-custo
+  };
+  const prs = load(K.PR);
+  const idx = prs.findIndex(p=>p.id===id);
+  if (idx>=0) prs[idx]=obj; else prs.push(obj);
+  save(K.PR, prs);
+  closeModal('modal-produto');
+  renderProdutosContent(produtosTab);
+  showToast('Produto salvo.');
+}
+
+function deleteProduto(id){
+  if (!confirm('Excluir este produto?')) return;
+  fbDel('produtos_catalogo', id);
+  save(K.PR, load(K.PR).filter(p=>p.id!==id));
+  renderProdutosContent(produtosTab);
+  showToast('Produto excluído.');
+}
+
+/* -- Material (estoque): modal -- */
+function openMaterialModal(m=null){
+  document.getElementById('modal-material-title').textContent = m?'Editar material':'Novo material';
+  document.getElementById('mat-id').value           = m?.id || '';
+  document.getElementById('mat-nome').value         = m?.nome || '';
+  document.getElementById('mat-unidade').value      = m?.unidade || 'unidade';
+  document.getElementById('mat-custo').value        = m?.custo ?? '';
+  document.getElementById('mat-estoque').value      = m?.estoque ?? '';
+  document.getElementById('mat-estoque-min').value  = m?.estoqueMin ?? '';
+  renderMatHistorico(m?.id);
+  openModal('modal-material');
+}
+
+function renderMatHistorico(matId){
+  const el = document.getElementById('mat-historico');
+  if (!matId){ el.innerHTML=''; return; }
+  const movs = load(K.EM).filter(x=>x.matId===matId).sort((a,b)=>b.data.localeCompare(a.data));
+  if (!movs.length){
+    el.innerHTML = `<div class="card-label" style="margin-top:18px">Histórico de movimentação</div><div style="font-size:12px;color:var(--text-soft);margin-bottom:10px">Nenhuma movimentação registrada ainda.</div>`;
+    return;
+  }
+  const totalEntradas = movs.filter(m=>m.tipo==='entrada').reduce((s,m)=>s+(m.valor||0),0);
+  const totalSaidas   = movs.filter(m=>m.tipo==='saida').reduce((s,m)=>s+(m.valor||0),0);
+  el.innerHTML = `
+    <div class="card-label" style="margin-top:18px">Histórico de movimentação</div>
+    <div class="fin-grid" style="margin-bottom:10px">
+      <div class="fin-tile"><div class="fin-tile-label">Total comprado</div><div class="fin-tile-value green" style="font-size:16px">${fmtM(totalEntradas)}</div></div>
+      <div class="fin-tile"><div class="fin-tile-label">Total consumido</div><div class="fin-tile-value red" style="font-size:16px">${fmtM(totalSaidas)}</div></div>
+    </div>
+    <div style="max-height:220px;overflow-y:auto">
+      ${movs.map(m=>`
+        <div class="tx-row" style="padding:8px 0">
+          <div class="tx-left">
+            <div class="tx-dot ${m.tipo==='entrada'?'in':'out'}">
+              <svg viewBox="0 0 24 24">${m.tipo==='entrada'?'<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>':'<polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/>'}</svg>
+            </div>
+            <div><div class="tx-desc" style="font-size:13px">${m.tipo==='entrada'?'Entrada':'Saída'} · ${m.qtd} un.</div><div class="tx-date">${formatDate(m.data)}${m.motivo?' · '+m.motivo:''}</div></div>
+          </div>
+          <div class="tx-amount ${m.tipo==='entrada'?'in':'out'}" style="font-size:13px">${m.tipo==='entrada'?'+':'-'}${fmtM(m.valor)}</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function saveMaterial(){
+  const nome  = document.getElementById('mat-nome').value.trim();
+  const custo = parseFloat(document.getElementById('mat-custo').value);
+  if (!nome){ showToast('Informe o nome do material'); return; }
+  if (isNaN(custo)){ showToast('Informe o custo unitário'); return; }
+  const id = document.getElementById('mat-id').value || 'mat'+Date.now();
+  const obj = {
+    id, nome,
+    unidade: document.getElementById('mat-unidade').value,
+    custo,
+    estoque:    parseFloat(document.getElementById('mat-estoque').value)||0,
+    estoqueMin: parseFloat(document.getElementById('mat-estoque-min').value)||0
+  };
+  const ms = load(K.M);
+  const idx = ms.findIndex(x=>x.id===id);
+  if (idx>=0) ms[idx]=obj; else ms.push(obj);
+  save(K.M, ms);
+  closeModal('modal-material');
+  renderProdutosContent(produtosTab);
+  showToast('Material salvo.');
+}
+
+function deleteMaterial(id){
+  if (!confirm('Excluir este material? Produtos que o utilizam deixarão de calcular esse custo.')) return;
+  fbDel('materiais', id);
+  save(K.M, load(K.M).filter(m=>m.id!==id));
+  renderProdutosContent(produtosTab);
+  showToast('Material excluído.');
+}
+
+/* -- Entrada de estoque (compra de material) -- */
+function openEstoqueEntradaModal(matId){
+  const mats = load(K.M);
+  const sel = document.getElementById('ee-mat');
+  sel.innerHTML = mats.length
+    ? mats.map(m=>`<option value="${m.id}">${m.nome} (${m.unidade||'un'})</option>`).join('')
+    : '<option value="">Cadastre um material primeiro</option>';
+  if (matId) sel.value = matId;
+  document.getElementById('ee-qtd').value = '';
+  document.getElementById('ee-data').value = todayStr();
+  document.getElementById('ee-obs').value = '';
+  onEeMatChange();
+  openModal('modal-estoque-entrada');
+}
+
+function onEeMatChange(){
+  const matId = document.getElementById('ee-mat').value;
+  const m = load(K.M).find(x=>x.id===matId);
+  document.getElementById('ee-custo').value = m ? (m.custo ?? '') : '';
+  updateEeTotalPreview();
+}
+
+function updateEeTotalPreview(){
+  const qtd = parseFloat(document.getElementById('ee-qtd').value)||0;
+  const custo = parseFloat(document.getElementById('ee-custo').value)||0;
+  document.getElementById('ee-total-preview').textContent = fmtM(qtd*custo);
+}
+
+function saveEstoqueEntrada(){
+  const matId = document.getElementById('ee-mat').value;
+  const qtd   = parseFloat(document.getElementById('ee-qtd').value);
+  const custo = parseFloat(document.getElementById('ee-custo').value);
+  const data  = document.getElementById('ee-data').value || todayStr();
+  const obs   = document.getElementById('ee-obs').value.trim();
+  if (!matId){ showToast('Selecione um material'); return; }
+  if (!qtd || qtd<=0){ showToast('Informe a quantidade comprada'); return; }
+  if (isNaN(custo) || custo<0){ showToast('Informe o custo unitário'); return; }
+
+  const ms = load(K.M);
+  const idx = ms.findIndex(m=>m.id===matId);
+  if (idx<0){ showToast('Material não encontrado'); return; }
+  ms[idx].estoque = (ms[idx].estoque||0) + qtd;
+  ms[idx].custo = custo; // atualiza para o custo da compra mais recente
+  save(K.M, ms);
+
+  const em = load(K.EM);
+  em.push({
+    id: 'em'+Date.now(),
+    matId, tipo: 'entrada', qtd, custoUnit: custo, valor: qtd*custo,
+    data, motivo: obs || 'Compra de material'
+  });
+  save(K.EM, em);
+
+  closeModal('modal-estoque-entrada');
+  renderProdutosContent(produtosTab);
+  showToast('Entrada de estoque registrada.');
+}
+
+/* -- Itens de catálogo dentro de um pedido -- */
+function populateProdutoSelectPedido(){
+  const prods = load(K.PR).filter(p=>p.status!=='Inativo');
+  const sel = document.getElementById('p-item-produto');
+  sel.innerHTML = prods.length
+    ? prods.map(p=>`<option value="${p.id}">${p.nome} (${fmtM(p.preco)})</option>`).join('')
+    : '<option value="">Nenhum produto ativo cadastrado</option>';
+}
+
+function addItemPedido(){
+  const prodId = document.getElementById('p-item-produto').value;
+  const qtd    = parseFloat(document.getElementById('p-item-qtd').value)||1;
+  if (!prodId){ showToast('Cadastre um produto no catálogo primeiro'); return; }
+  const prod = load(K.PR).find(p=>p.id===prodId);
+  if (!prod) return;
+  const idx = itensPedidoAtual.findIndex(i=>i.produtoId===prodId);
+  if (idx>=0) itensPedidoAtual[idx].qtd += qtd;
+  else itensPedidoAtual.push({ produtoId: prodId, produtoNome: prod.nome, qtd, precoUnit: prod.preco||0 });
+  document.getElementById('p-item-qtd').value = 1;
+  renderItensPedidoList();
+}
+function removeItemPedido(i){ itensPedidoAtual.splice(i,1); renderItensPedidoList(); }
+
+function renderItensPedidoList(){
+  const el = document.getElementById('p-itens-list');
+  el.innerHTML = itensPedidoAtual.length ? itensPedidoAtual.map((it,i)=>`
+    <div class="tx-row" style="padding:8px 0">
+      <div class="tx-left"><div style="font-size:13px">${it.qtd}x ${it.produtoNome}</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:12px;color:var(--text-soft)">${fmtM(it.precoUnit*it.qtd)}</span>
+        <button class="btn btn-ghost btn-sm" onclick="removeItemPedido(${i})">Remover</button>
+      </div>
+    </div>`).join('') : '<div style="font-size:12px;color:var(--text-soft)">Nenhum item do catálogo adicionado.</div>';
+  renderItensPedidoResumo();
+}
+
+// Calcula, para uma lista de itens {produtoId, qtd}, o total de cada material consumido (proporcional à quantidade)
+function calcMateriaisItens(itens){
+  const prods = load(K.PR), mats = load(K.M);
+  const consumo = {};
+  (itens||[]).forEach(it=>{
+    const prod = prods.find(p=>p.id===it.produtoId);
+    (prod?.composicao||[]).forEach(c=>{
+      consumo[c.matId] = (consumo[c.matId]||0) + c.qtd*it.qtd;
+    });
+  });
+  let custoTotal = 0;
+  const detalhes = Object.entries(consumo).map(([matId,qtd])=>{
+    const m = mats.find(x=>x.id===matId);
+    const custo = m ? m.custo*qtd : 0;
+    custoTotal += custo;
+    return { matId, nome: m?m.nome:'Material removido', unidade: m?.unidade||'', qtd, custo };
+  });
+  return { detalhes, custoTotal };
+}
+
+function renderItensPedidoResumo(){
+  const wrap = document.getElementById('p-itens-resumo');
+  if (!itensPedidoAtual.length){ wrap.style.display='none'; return; }
+  wrap.style.display='block';
+  const totalVenda = itensPedidoAtual.reduce((s,i)=>s+i.precoUnit*i.qtd,0);
+  const { detalhes, custoTotal } = calcMateriaisItens(itensPedidoAtual);
+  const extras = parseFloat(document.getElementById('p-custos-extras')?.value)||0;
+  const lucro = totalVenda - custoTotal - extras;
+  const margem = totalVenda>0 ? (lucro/totalVenda*100) : 0;
+  const totalPedido = parseFloat(document.getElementById('p-total')?.value)||0;
+  const divergente = totalPedido>0 && Math.abs(totalPedido-totalVenda)>0.01;
+  wrap.innerHTML = `
+    <div class="meta-row"><span>Valor total dos itens</span><b>${fmtM(totalVenda)}</b></div>
+    <div class="meta-row"><span>Custo estimado dos materiais</span><b>${fmtM(custoTotal)}</b></div>
+    ${extras?`<div class="meta-row"><span>Outros custos informados</span><b>${fmtM(extras)}</b></div>`:''}
+    <div class="meta-row"><span>Lucro bruto estimado</span><b style="color:${lucro>=0?'var(--success)':'var(--danger)'}">${fmtM(lucro)}</b></div>
+    <div class="meta-row"><span>Margem de lucro estimada</span><b style="color:${margem>=0?'var(--success)':'var(--danger)'}">${margem.toFixed(1)}%</b></div>
+    ${detalhes.length?`<div style="margin-top:8px;font-size:11px;color:var(--text-soft)">Materiais a consumir do estoque: ${detalhes.map(d=>`${d.nome} (${d.qtd} ${d.unidade})`).join(', ')}</div>`:''}
+    ${divergente?`<div style="margin-top:10px;padding:8px 10px;background:var(--rose-pale);border:1px solid var(--rose-light);border-radius:8px;font-size:11px;color:var(--rose-dark)">⚠️ O valor total do pedido (${fmtM(totalPedido)}) é diferente do valor dos itens do catálogo (${fmtM(totalVenda)}). O lucro em "Financeiro do pedido" e em "Lucratividade" usa o valor total do pedido.</div>`:''}
+    <button type="button" class="btn btn-ghost btn-sm" style="width:100%;margin-top:10px" onclick="usarValorItensNoPedido()">Usar este valor como total do pedido</button>
+  `;
+}
+
+function usarValorItensNoPedido(){
+  const totalVenda = itensPedidoAtual.reduce((s,i)=>s+i.precoUnit*i.qtd,0);
+  document.getElementById('p-total').value = totalVenda.toFixed(2);
+  calcPendente();
+  showToast('Valor total atualizado.');
+}
+
+// Registra uma movimentação de estoque (entrada = compra/ajuste positivo, saida = consumo/ajuste negativo)
+function logMovimentoEstoque(matId, tipo, qtd, custoUnit, motivo){
+  if (!matId || !qtd) return;
+  const ms = load(K.EM);
+  ms.push({
+    id: 'em'+Date.now()+Math.random().toString(36).slice(2,7),
+    matId, tipo, qtd: Math.abs(qtd),
+    custoUnit: custoUnit||0,
+    valor: (custoUnit||0)*Math.abs(qtd),
+    data: todayStr(),
+    motivo: motivo||''
+  });
+  save(K.EM, ms);
+}
+
+// Ajusta o estoque de materiais: devolve o consumo dos itens antigos e retira o consumo dos itens novos
+function aplicarConsumoEstoque(itensAntigos, itensNovos, motivo){
+  const { detalhes: antigos } = calcMateriaisItens(itensAntigos||[]);
+  const { detalhes: novos }   = calcMateriaisItens(itensNovos||[]);
+  if (!antigos.length && !novos.length) return;
+  const delta = {}; // consumo líquido por material (positivo = retirar do estoque)
+  antigos.forEach(d=>{ delta[d.matId] = (delta[d.matId]||0) - d.qtd; });
+  novos.forEach(d=>{ delta[d.matId] = (delta[d.matId]||0) + d.qtd; });
+  const mats = load(K.M);
+  let mudou = false;
+  Object.entries(delta).forEach(([matId, qtdLiquida])=>{
+    if (!qtdLiquida) return;
+    const idx = mats.findIndex(m=>m.id===matId);
+    if (idx>=0){
+      mats[idx].estoque = (mats[idx].estoque||0) - qtdLiquida;
+      mudou = true;
+      // Loga a movimentação: qtdLiquida > 0 => saída (consumo); < 0 => entrada (devolução/ajuste)
+      if (qtdLiquida > 0) logMovimentoEstoque(matId, 'saida', qtdLiquida, mats[idx].custo, motivo||'Consumo em pedido');
+      else                logMovimentoEstoque(matId, 'entrada', -qtdLiquida, mats[idx].custo, motivo||'Estorno de pedido');
+    }
+  });
+  if (mudou) save(K.M, mats);
+}
+
+/* -- Relatório de estoque e insumos -- */
+function renderRelatorioEstoque(){
+  const movs = load(K.EM);
+  const mats = load(K.M);
+  const now = new Date();
+  const mesAtual = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+
+  const entradas = movs.filter(m=>m.tipo==='entrada');
+  const saidas   = movs.filter(m=>m.tipo==='saida');
+  const totalInvestido   = entradas.reduce((s,m)=>s+(m.valor||0),0);
+  const totalConsumido   = saidas.reduce((s,m)=>s+(m.valor||0),0);
+  const investidoMes = entradas.filter(m=>m.data.startsWith(mesAtual)).reduce((s,m)=>s+(m.valor||0),0);
+  const consumidoMes = saidas.filter(m=>m.data.startsWith(mesAtual)).reduce((s,m)=>s+(m.valor||0),0);
+
+  // Ranking de materiais mais consumidos (por valor)
+  const porMaterial = {};
+  saidas.forEach(m=>{
+    if (!porMaterial[m.matId]) porMaterial[m.matId] = { qtd:0, valor:0 };
+    porMaterial[m.matId].qtd   += m.qtd||0;
+    porMaterial[m.matId].valor += m.valor||0;
+  });
+  const ranking = Object.entries(porMaterial)
+    .map(([matId,d])=>({ matId, nome: mats.find(x=>x.id===matId)?.nome || 'Material removido', unidade: mats.find(x=>x.id===matId)?.unidade || '', ...d }))
+    .sort((a,b)=>b.valor-a.valor)
+    .slice(0,10);
+
+  // Valor total em estoque parado (custo unitário atual x estoque atual)
+  const valorEstoqueAtual = mats.reduce((s,m)=>s+((m.custo||0)*(m.estoque||0)),0);
+
+  const alertasEstoqueBaixo = mats.filter(m=>(m.estoqueMin||0)>0 && (m.estoque||0)<=(m.estoqueMin||0));
+
+  if (!movs.length && !mats.length){
+    return `<div class="card">${emptyHTML('Nenhum dado de estoque ainda.<br><strong>Cadastre materiais e registre entradas.</strong>')}</div>`;
+  }
+
+  return `
+    <div class="fin-grid">
+      <div class="fin-tile"><div class="fin-tile-label">Investido (total)</div><div class="fin-tile-value green">${fmtM(totalInvestido)}</div></div>
+      <div class="fin-tile"><div class="fin-tile-label">Consumido (total)</div><div class="fin-tile-value red">${fmtM(totalConsumido)}</div></div>
+      <div class="fin-tile"><div class="fin-tile-label">Investido (mês)</div><div class="fin-tile-value blue">${fmtM(investidoMes)}</div></div>
+      <div class="fin-tile"><div class="fin-tile-label">Consumido (mês)</div><div class="fin-tile-value gold">${fmtM(consumidoMes)}</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Valor parado em estoque hoje</div>
+      <div style="font-family:var(--font-display);font-size:26px;font-weight:600;color:var(--text)">${fmtM(valorEstoqueAtual)}</div>
+      <div style="font-size:12px;color:var(--text-soft);margin-top:4px">Estoque atual de cada material × custo unitário cadastrado.</div>
+    </div>
+
+    ${alertasEstoqueBaixo.length ? `
+    <div class="card" style="border-color:var(--danger)">
+      <div class="card-label" style="color:var(--danger)">⚠️ Estoque baixo</div>
+      ${alertasEstoqueBaixo.map(m=>`
+        <div class="tx-row">
+          <div class="tx-left"><div class="tx-desc">${m.nome}</div></div>
+          <div style="text-align:right">
+            <div style="font-size:13px;color:var(--danger);font-weight:600">${m.estoque||0} ${m.unidade||''}</div>
+            <div style="font-size:11px;color:var(--text-soft)">mín. ${m.estoqueMin} ${m.unidade||''}</div>
+          </div>
+        </div>`).join('')}
+    </div>` : ''}
+
+    <div class="card">
+      <div class="card-label">Insumos mais utilizados</div>
+      ${ranking.length ? ranking.map((r,i)=>`
+        <div class="tx-row">
+          <div class="tx-left">
+            <div style="width:22px;height:22px;border-radius:6px;background:var(--blue-pale);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--blue-dark)">${i+1}</div>
+            <div><div class="tx-desc">${r.nome}</div><div class="tx-date">${r.qtd} ${r.unidade} consumidos</div></div>
+          </div>
+          <div class="tx-amount out">${fmtM(r.valor)}</div>
+        </div>`).join('') : '<div style="font-size:12px;color:var(--text-soft)">Nenhum consumo registrado ainda.</div>'}
+    </div>
+  `;
 }
 
 /* ── AGENDA ──────────────────────────────────────── */
@@ -2187,6 +3212,8 @@ function renderFinList(tab){
     const porAno = agruparPorAno(ds);
     const anos = Object.keys(porAno).sort().reverse();
     el.innerHTML = anos.map(ano=>renderPilhaDespesas(ano, porAno[ano])).join('');
+  } else if(tab==='lucratividade'){
+    el.innerHTML = renderLucratividade();
   } else {
     const ps=load(K.P).filter(p=>p.pendente>0&&p.status!=='Cancelado').sort(sortByDate);
     if(!ps.length){el.innerHTML=`<div class="card">${emptyHTML('Nenhum pagamento pendente.')}</div>`;return;}
@@ -2215,10 +3242,65 @@ function renderFinList(tab){
 function calcFin(){
   const now=new Date();
   const mes=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  const rec  =load(K.R).filter(r=>r.data.startsWith(mes)).reduce((s,r)=>s+(r.valor||0),0);
+  const recReceitas=load(K.R).filter(r=>r.data.startsWith(mes)).reduce((s,r)=>s+(r.valor||0),0);
+  const recVendas   =load(K.V).filter(v=>v.data&&v.data.startsWith(mes)).reduce((s,v)=>s+(v.valor||0),0);
+  const rec  =recReceitas+recVendas;
   const gasto=load(K.D).filter(d=>d.data.startsWith(mes)).reduce((s,d)=>s+(d.valor||0),0);
   const pend =load(K.P).filter(p=>p.status!=='Cancelado').reduce((s,p)=>s+(p.pendente||0),0);
-  return{rec,gasto,pend};
+  return{rec,gasto,pend,recReceitas,recVendas};
+}
+
+// Visão de lucratividade real por pedido: valor pago, custo de materiais, outros custos, lucro bruto e margem
+function renderLucratividade(){
+  const ps = load(K.P).filter(p=>p.status!=='Cancelado' && (p.total||0)>0);
+  if (!ps.length) return `<div class="card">${emptyHTML('Nenhum pedido com valor registrado ainda.<br><strong>Cadastre itens do catálogo e outros custos nos pedidos para ver a lucratividade real.</strong>')}</div>`;
+
+  let totalVenda=0, totalPago=0, totalMat=0, totalExtras=0, totalLucro=0;
+  const linhas = ps.map(p=>{
+    const c = calcLucroPedido(p);
+    totalVenda  += p.total||0;
+    totalPago   += p.pago||0;
+    totalMat    += c.custoMateriais;
+    totalExtras += c.custoExtras;
+    totalLucro  += c.lucroBruto;
+    return { p, c };
+  }).sort((a,b)=>(b.p.dataEntrega||'').localeCompare(a.p.dataEntrega||''));
+  const margemMedia = totalVenda>0 ? (totalLucro/totalVenda*100) : 0;
+  const totalVendasAvulsas = load(K.V).reduce((s,v)=>s+(v.valor||0),0);
+
+  return `
+  <div class="fin-grid">
+    <div class="fin-tile"><div class="fin-tile-label">Vendido (pedidos)</div><div class="fin-tile-value blue">${fmtM(totalVenda)}</div></div>
+    <div class="fin-tile"><div class="fin-tile-label">Custo materiais</div><div class="fin-tile-value red">${fmtM(totalMat)}</div></div>
+    <div class="fin-tile"><div class="fin-tile-label">Outros custos</div><div class="fin-tile-value red">${fmtM(totalExtras)}</div></div>
+    <div class="fin-tile"><div class="fin-tile-label">Lucro bruto</div><div class="fin-tile-value green">${fmtM(totalLucro)}</div></div>
+  </div>
+  <div class="card" style="text-align:center">
+    <div class="card-label" style="justify-content:center">Margem de lucro média</div>
+    <div style="font-family:var(--font-display);font-size:32px;font-weight:600;color:${margemMedia>=0?'var(--success)':'var(--danger)'}">${margemMedia.toFixed(1)}%</div>
+    <div style="font-size:11px;color:var(--text-soft);margin-top:2px">Baseado em ${linhas.length} pedido${linhas.length===1?'':'s'} com valor registrado</div>
+  </div>
+  ${totalVendasAvulsas>0?`<div class="card" style="background:var(--blue-pale);border:none;box-shadow:none">
+    <div style="font-size:12px;color:var(--text-mid);line-height:1.6">💡 Há <b>${fmtM(totalVendasAvulsas)}</b> em vendas avulsas registradas (aba Vendas). Elas entram no faturamento total do Financeiro, mas não aparecem no detalhamento acima porque não têm materiais/custos vinculados.</div>
+  </div>`:''}
+
+  <div class="card-label" style="margin:18px 4px 8px">Lucro por pedido</div>
+  ${linhas.map(({p,c})=>`
+    <div class="pedido-card" style="cursor:pointer" onclick="openDetail('${p.id}')">
+      <div class="pedido-card-header">
+        <div>
+          <div class="pedido-nome">${p.nome||'—'}</div>
+          <div class="pedido-sub">${p.dataEntrega?formatDate(p.dataEntrega):'—'}${p.produtos?' · '+(p.produtos.length>30?p.produtos.slice(0,30)+'…':p.produtos):''}</div>
+        </div>
+        <span class="badge" style="background:${c.margem>=0?'#E8F8EF':'var(--rose-pale)'};color:${c.margem>=0?'#1F9C5C':'var(--rose-dark)'};border-color:${c.margem>=0?'#A9E8C6':'var(--rose-light)'}">${c.margem.toFixed(0)}% margem</span>
+      </div>
+      <div class="detail-row"><span class="detail-key">Valor pago</span><span class="detail-val" style="color:var(--success)">${fmtM(p.pago)}</span></div>
+      <div class="detail-row"><span class="detail-key">Custo materiais</span><span class="detail-val">${fmtM(c.custoMateriais)}</span></div>
+      <div class="detail-row"><span class="detail-key">Outros custos</span><span class="detail-val">${fmtM(c.custoExtras)}</span></div>
+      <div class="detail-row"><span class="detail-key">Lucro bruto</span><span class="detail-val" style="color:${c.lucroBruto>=0?'var(--success)':'var(--danger)'};font-weight:700">${fmtM(c.lucroBruto)}</span></div>
+    </div>
+  `).join('')}
+  `;
 }
 
 function saveReceita(){
@@ -2269,7 +3351,7 @@ function renderVendasContent(tab){
     el.innerHTML=`<div class="card" style="text-align:center;padding:36px 20px">
       <div style="font-family:var(--font-display);font-size:36px;color:var(--blue-light);margin-bottom:14px">Venda Avulsa</div>
       <p style="font-size:13px;color:var(--text-soft);margin-bottom:20px">Registre uma venda sem pedido formal</p>
-      <button class="btn btn-primary" style="background:var(--blue-dark)" onclick="openVendaModal()">Registrar venda</button>
+      <button class="btn btn-primary" onclick="openVendaModal()">Registrar venda</button>
     </div>`;
   }
 }
@@ -2322,18 +3404,18 @@ function savePerfil(){
   const senhaNova= document.getElementById('perfil-senha-nova').value;
   const senhaConf= document.getElementById('perfil-senha-conf').value;
 
-  // Verificar senha atual
-  const user = USERS[0];
+  // Verificar senha atual (contra o valor persistido, não a constante fixa)
   if (!senhaAt) { showToast('Informe a senha atual'); return; }
-  if (senhaAt !== user.senha) { showToast('Senha atual incorreta'); return; }
+  if (senhaAt !== getSenhaAtual()) { showToast('Senha atual incorreta'); return; }
 
   if (senhaNova) {
     if (senhaNova !== senhaConf) { showToast('As senhas não coincidem'); return; }
     if (senhaNova.length < 4)    { showToast('Senha muito curta (mín. 4 caracteres)'); return; }
-    user.senha = senhaNova;
+    appConfig = loadO(K.C);
+    appConfig.senhaCustom = senhaNova;
+    save(K.C, appConfig);
   }
 
-  save(K.U, currentUser);
   closeModal('modal-perfil');
   showToast('Senha atualizada com sucesso!');
 }
@@ -2357,6 +3439,7 @@ function handleFab(){
     else if(finTab==='despesas'){document.getElementById('d-data').value=todayStr();openModal('modal-despesa');}
     else openPedidoModal();
   } else if(currentScreen==='vendas'){openVendaModal();}
+  else if(currentScreen==='produtos'){ produtosTab==='produtos' ? openProdutoModal() : openMaterialModal(); }
   else openPedidoModal();
 }
 
