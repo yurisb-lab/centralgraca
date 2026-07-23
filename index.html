@@ -257,39 +257,86 @@ select.form-control {
 /* content */
 .content {
   flex: 1; overflow-y: auto;
-  padding: 20px 16px 90px;
+  padding: 20px 16px 40px;
   overscroll-behavior: contain;
 }
 
-/* ── BOTTOM NAV ─────────────────────────────────── */
-.bottom-nav {
+/* ── SIDEBAR MENU (sanduíche) ────────────────────── */
+.side-menu-toggle {
+  position: fixed; left: 0; top: 50%; transform: translateY(-50%);
+  z-index: 250;
   background: var(--surface);
-  border-top: 1px solid var(--border-light);
-  display: flex;
-  position: fixed; bottom: 0; left: 0; right: 0;
-  z-index: 200;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  flex-shrink: 0;
+  border: 1px solid var(--border-light); border-left: none;
+  border-radius: 0 14px 14px 0;
+  padding: 14px 9px;
+  display: flex; flex-direction: column; align-items: center; gap: 7px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  color: var(--text-mid);
+  transition: background .15s, color .15s;
 }
-.nav-item {
-  flex: 1; display: flex; flex-direction: column; align-items: center;
-  padding: 9px 2px 8px;
-  cursor: pointer; border: none; background: none;
-  transition: color .15s; position: relative;
-  color: var(--text-soft);
+.side-menu-toggle:hover { background: var(--blue-pale); color: var(--blue-dark); }
+.side-menu-toggle svg { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+.side-menu-toggle span {
+  font-size: 9px; font-weight: 700; letter-spacing: 1px;
+  writing-mode: vertical-rl; text-orientation: mixed;
 }
-.nav-item svg { display: block; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; margin-bottom: 3px; transition: stroke .15s; }
-.nav-item span { font-size: 10px; font-weight: 500; transition: color .15s, font-weight .15s; }
-.nav-item.active { color: var(--blue-dark); }
-.nav-item.active span { font-weight: 700; }
-.nav-item.active svg { stroke: var(--blue-dark); }
-.nav-badge {
-  position: absolute; top: 7px; right: calc(50% - 18px);
-  background: var(--rose); color: white;
-  border-radius: 20px; min-width: 16px; height: 16px;
-  font-size: 9px; font-weight: 700;
+
+.sidebar-overlay {
+  position: fixed; inset: 0;
+  background: rgba(46,42,38,.45);
+  backdrop-filter: blur(3px);
+  z-index: 400; display: none;
+}
+.sidebar-overlay.active { display: block; }
+
+.sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: 262px; max-width: 82vw;
+  background: var(--surface);
+  z-index: 401;
+  box-shadow: var(--shadow-lg);
+  transform: translateX(-100%);
+  transition: transform .3s cubic-bezier(.34,1.1,.64,1);
+  display: flex; flex-direction: column;
+  padding: 18px 0;
+  padding-top: max(18px, env(safe-area-inset-top, 0px));
+}
+.sidebar.active { transform: translateX(0); }
+.sidebar-header {
+  padding: 4px 18px 16px; margin-bottom: 8px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border-light);
+}
+.sidebar-logo { font-family: var(--font-script); font-size: 27px; color: var(--blue-dark); }
+.sidebar-close {
+  width: 32px; height: 32px; border-radius: 9px;
+  background: none; border: none; cursor: pointer;
+  color: var(--text-mid);
   display: flex; align-items: center; justify-content: center;
-  padding: 0 4px;
+  transition: background .15s;
+}
+.sidebar-close:hover { background: var(--cream-dark); }
+.sidebar-nav { flex: 1; overflow-y: auto; padding: 4px 10px; }
+.sidebar-item {
+  display: flex; align-items: center; gap: 13px;
+  padding: 12px 12px; border-radius: 12px;
+  cursor: pointer; color: var(--text-mid);
+  font-size: 14px; font-weight: 500;
+  position: relative; margin-bottom: 2px;
+  transition: background .15s, color .15s;
+}
+.sidebar-item svg { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 1.7; flex-shrink: 0; }
+.sidebar-item:hover { background: var(--cream-dark); }
+.sidebar-item.active { background: var(--blue-pale); color: var(--blue-dark); font-weight: 700; }
+.sidebar-item.active svg { stroke: var(--blue-dark); }
+.sidebar-badge {
+  margin-left: auto;
+  background: var(--rose); color: white;
+  border-radius: 20px; min-width: 18px; height: 18px;
+  font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 5px;
 }
 
 /* ── SCREENS ─────────────────────────────────────── */
@@ -642,7 +689,7 @@ select.form-control {
 
 /* ── FAB ─────────────────────────────────────────── */
 .fab {
-  position: fixed; bottom: 74px; right: 18px;
+  position: fixed; bottom: 20px; right: 18px;
   width: 52px; height: 52px; border-radius: 50%;
   background: linear-gradient(135deg, var(--blue-dark), var(--rose));
   border: none; color: white;
@@ -656,7 +703,7 @@ select.form-control {
 
 /* ── TOAST ───────────────────────────────────────── */
 .toast {
-  position: fixed; bottom: 84px; left: 50%; transform: translateX(-50%);
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
   background: var(--text); color: white;
   padding: 11px 22px; border-radius: 22px;
   font-size: 13px; font-weight: 500; white-space: nowrap;
@@ -1032,34 +1079,59 @@ select.form-control {
 
   </main>
 
-  <!-- BOTTOM NAV -->
-  <nav class="bottom-nav">
-    <button class="nav-item active" onclick="navigate('dashboard')">
-      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      <span>Início</span>
-    </button>
-    <button class="nav-item" onclick="navigate('pedidos')">
-      <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-      <span>Pedidos</span>
-    </button>
-    <button class="nav-item" onclick="navigate('agenda')" style="position:relative">
-      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      <span>Agenda</span>
-      <span class="nav-badge" id="notif-badge" style="display:none">!</span>
-    </button>
-    <button class="nav-item" onclick="navigate('financeiro')">
-      <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-      <span>Financeiro</span>
-    </button>
-    <button class="nav-item" onclick="navigate('vendas')">
-      <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-      <span>Vendas</span>
-    </button>
-    <button class="nav-item" onclick="navigate('config')">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      <span>Config</span>
-    </button>
-  </nav>
+  <!-- BOTÃO SANDUÍCHE (lateral esquerda) -->
+  <button class="side-menu-toggle" onclick="toggleSidebar()" aria-label="Abrir menu">
+    <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    <span>MENU</span>
+  </button>
+
+  <!-- OVERLAY DO MENU LATERAL -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+  <!-- MENU LATERAL -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-logo">Graça em Papel</span>
+      <button class="sidebar-close" onclick="closeSidebar()" aria-label="Fechar menu">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-item" data-screen="dashboard" onclick="navigate('dashboard')">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>Início</span>
+      </div>
+      <div class="sidebar-item" data-screen="pedidos" onclick="navigate('pedidos')">
+        <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        <span>Pedidos</span>
+      </div>
+      <div class="sidebar-item" data-screen="agenda" onclick="navigate('agenda')">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span>Agenda</span>
+        <span class="sidebar-badge" id="notif-badge" style="display:none">!</span>
+      </div>
+      <div class="sidebar-item" data-screen="financeiro" onclick="navigate('financeiro')">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <span>Financeiro</span>
+      </div>
+      <div class="sidebar-item" data-screen="vendas" onclick="navigate('vendas')">
+        <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <span>Vendas</span>
+      </div>
+      <div class="sidebar-item" data-screen="produtos" onclick="navigate('produtos')">
+        <svg viewBox="0 0 24 24"><path d="M20.59 13.41 13.42 20.6a2 2 0 0 1-2.83 0L2 12.01V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        <span>Produtos &amp; Estoque</span>
+      </div>
+      <div class="sidebar-item" data-screen="clientes" onclick="navigate('clientes')">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>Clientes</span>
+      </div>
+      <div class="sidebar-item" data-screen="config" onclick="navigate('config')">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Config</span>
+      </div>
+    </nav>
+  </aside>
 </div><!-- /app -->
 
 <!-- FAB -->
@@ -1686,9 +1758,10 @@ function navigate(s, param) {
   currentScreen = s;
   document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
   document.getElementById('screen-'+s).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach((el,i) => {
-    el.classList.toggle('active', ['dashboard','pedidos','agenda','financeiro','vendas','config'][i] === s);
+  document.querySelectorAll('.sidebar-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.screen === s);
   });
+  closeSidebar();
 
   const logo   = document.getElementById('topbar-logo');
   const title  = document.getElementById('topbar-title');
@@ -3459,6 +3532,20 @@ function checkPush(){
     else if(de===d3) new Notification('Graça em Papel · 3 dias',{body:`Entrega de ${p.nome} em 3 dias`});
     else if(de<today) new Notification('Graça em Papel · Atrasado',{body:`${p.nome} — ${diasAtraso(p)}d de atraso`});
   });
+}
+
+/* ── SIDEBAR MENU ────────────────────────────────── */
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('active');
+  document.getElementById('sidebar-overlay').classList.toggle('active');
+}
+function openSidebar(){
+  document.getElementById('sidebar').classList.add('active');
+  document.getElementById('sidebar-overlay').classList.add('active');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('active');
+  document.getElementById('sidebar-overlay').classList.remove('active');
 }
 
 /* ── MODAL UTILS ─────────────────────────────────── */
