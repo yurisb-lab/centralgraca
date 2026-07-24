@@ -56,7 +56,12 @@
 html { -webkit-tap-highlight-color: transparent; }
 body {
   font-family: var(--font-body);
-  background: var(--cream);
+  background:
+    radial-gradient(ellipse 70% 40% at 15% 0%, rgba(79,163,209,.20) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 45% at 85% 15%, rgba(240,112,154,.22) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 35% at 75% 100%, rgba(232,184,75,.14) 0%, transparent 60%),
+    var(--cream);
+  background-attachment: fixed;
   color: var(--text);
   min-height: 100vh;
   overflow-x: hidden;
@@ -804,7 +809,7 @@ select.form-control {
 
   window.fbSyncOnBoot = async function() {
     try {
-      const cols = { cdg_pedidos:'pedidos', cdg_receitas:'receitas', cdg_despesas:'despesas', cdg_vendas:'vendas', cdg_materiais:'materiais', cdg_produtos:'produtos_catalogo', cdg_estoque_mov:'estoque_movimentacoes' };
+      const cols = { cdg_pedidos:'pedidos', cdg_receitas:'receitas', cdg_despesas:'despesas', cdg_vendas:'vendas', cdg_materiais:'materiais', cdg_produtos:'produtos_catalogo', cdg_estoque_mov:'estoque_movimentacoes', cdg_clientes:'clientes' };
       for (const [lsKey, colName] of Object.entries(cols)) {
         const items = await window.fbLoadCollection(colName);
         // Sempre sobrescreve o localStorage com os dados do Firestore (fonte da verdade)
@@ -1005,8 +1010,9 @@ select.form-control {
 
     <!-- CLIENTES -->
     <div class="screen" id="screen-clientes">
-      <div style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <button class="see-all" onclick="navigate('pedidos')">‹ Voltar para Pedidos</button>
+        <button class="btn btn-rose btn-sm" onclick="openClienteFormModal()">+ Novo cliente</button>
       </div>
       <div class="search-wrap">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -1145,6 +1151,12 @@ select.form-control {
     <div class="modal-handle"></div>
     <div class="modal-title" id="modal-pedido-title">Novo pedido</div>
     <input type="hidden" id="pedido-id">
+    <input type="hidden" id="p-cliente-id">
+    <div class="form-group">
+      <label class="form-label">Cliente</label>
+      <select class="form-control" id="p-cliente-select" onchange="onClienteSelectChange(this)"></select>
+      <div style="font-size:11px;color:var(--text-soft);margin-top:6px">Selecione um cliente cadastrado ou deixe em branco para digitar manualmente.</div>
+    </div>
     <div class="form-group">
       <label class="form-label">Nome do cliente *</label>
       <input type="text" class="form-control" id="p-nome" placeholder="Ex: Maria Silva">
@@ -1284,6 +1296,53 @@ select.form-control {
   </div>
 </div>
 
+<!-- CADASTRO / EDIÇÃO DE CLIENTE -->
+<div class="modal-overlay" id="modal-cliente-form">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-cliente-form-title">Novo cliente</div>
+    <input type="hidden" id="cf-id">
+    <div class="form-group">
+      <label class="form-label">Nome *</label>
+      <input type="text" class="form-control" id="cf-nome" placeholder="Ex: Maria Silva">
+    </div>
+    <div class="form-group">
+      <label class="form-label">WhatsApp</label>
+      <input type="tel" class="form-control" id="cf-whatsapp" placeholder="Ex: 85999998888">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Observações</label>
+      <textarea class="form-control" id="cf-obs" placeholder="Preferências, endereço, detalhes úteis..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger-ghost btn-sm" id="cf-delete-btn" style="display:none" onclick="deleteClienteForm()">Excluir</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-cliente-form')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveClienteForm()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CADASTRO RÁPIDO DE CLIENTE (atalho a partir do pedido) -->
+<div class="modal-overlay" id="modal-cliente-quick">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Novo cliente</div>
+    <p style="font-size:12px;color:var(--text-soft);margin:-14px 0 18px;line-height:1.6">Cadastre o essencial agora e continue o pedido de onde parou.</p>
+    <div class="form-group">
+      <label class="form-label">Nome *</label>
+      <input type="text" class="form-control" id="cq-nome" placeholder="Ex: Maria Silva">
+    </div>
+    <div class="form-group">
+      <label class="form-label">WhatsApp</label>
+      <input type="tel" class="form-control" id="cq-whatsapp" placeholder="Ex: 85999998888">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-cliente-quick')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveClienteQuick()">Cadastrar e usar</button>
+    </div>
+  </div>
+</div>
+
 <!-- CLIENTE (histórico e fidelização) -->
 <div class="modal-overlay" id="modal-cliente">
   <div class="modal">
@@ -1295,6 +1354,8 @@ select.form-control {
       </div>
       <span id="cli-badge"></span>
     </div>
+
+    <div id="cli-cadastro-acoes" style="margin-bottom:14px"></div>
 
     <div id="cli-stats" style="margin-bottom:6px"></div>
 
@@ -1411,7 +1472,7 @@ select.form-control {
       <div class="form-row" style="align-items:flex-end">
         <div class="form-group" style="margin-bottom:0">
           <label class="form-label">Material</label>
-          <select class="form-control" id="pr-comp-mat"></select>
+          <select class="form-control" id="pr-comp-mat" onchange="onMaterialSelectChange(this)"></select>
         </div>
         <div class="form-group" style="margin-bottom:0">
           <label class="form-label">Qtd por unidade</label>
@@ -1482,7 +1543,7 @@ select.form-control {
     <div class="modal-title">Registrar entrada de estoque</div>
     <div class="form-group">
       <label class="form-label">Material *</label>
-      <select class="form-control" id="ee-mat" onchange="onEeMatChange()"></select>
+      <select class="form-control" id="ee-mat" onchange="onMaterialSelectChange(this)"></select>
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -1508,6 +1569,39 @@ select.form-control {
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-estoque-entrada')">Cancelar</button>
       <button class="btn btn-success" onclick="saveEstoqueEntrada()">Registrar entrada</button>
+    </div>
+  </div>
+</div>
+
+<!-- CADASTRO RÁPIDO DE MATERIAL (atalho a partir de Produtos ou Estoque > Entrada) -->
+<div class="modal-overlay" id="modal-material-quick">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Novo material rápido</div>
+    <p style="font-size:12px;color:var(--text-soft);margin:-14px 0 18px;line-height:1.6">Cadastre o essencial agora e continue de onde parou. Depois você pode completar os detalhes em Estoque.</p>
+    <div class="form-group">
+      <label class="form-label">Nome do material *</label>
+      <input type="text" class="form-control" id="mq-nome" placeholder="Ex: Papel fotográfico">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Unidade</label>
+        <select class="form-control" id="mq-unidade">
+          <option>unidade</option><option>g</option><option>kg</option><option>ml</option><option>l</option><option>m</option><option>cm</option><option>folha</option><option>pacote</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Custo unitário (R$) *</label>
+        <input type="number" class="form-control" id="mq-custo" placeholder="0,00" step="0.01">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Estoque inicial (opcional)</label>
+      <input type="number" class="form-control" id="mq-estoque" placeholder="0" step="0.01">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-material-quick')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveMaterialQuick()">Cadastrar e usar</button>
     </div>
   </div>
 </div>
@@ -1623,8 +1717,8 @@ select.form-control {
 ════════════════════════════════════════════════ -->
 <script>
 /* ── DATA STORE ─────────────────────────────────── */
-const K = { P:'cdg_pedidos', R:'cdg_receitas', D:'cdg_despesas', V:'cdg_vendas', C:'cdg_config', U:'cdg_user', M:'cdg_materiais', PR:'cdg_produtos', EM:'cdg_estoque_mov' };
-const COL_MAP = { cdg_pedidos:'pedidos', cdg_receitas:'receitas', cdg_despesas:'despesas', cdg_vendas:'vendas', cdg_materiais:'materiais', cdg_produtos:'produtos_catalogo', cdg_estoque_mov:'estoque_movimentacoes' };
+const K = { P:'cdg_pedidos', R:'cdg_receitas', D:'cdg_despesas', V:'cdg_vendas', C:'cdg_config', U:'cdg_user', M:'cdg_materiais', PR:'cdg_produtos', EM:'cdg_estoque_mov', CLI:'cdg_clientes' };
+const COL_MAP = { cdg_pedidos:'pedidos', cdg_receitas:'receitas', cdg_despesas:'despesas', cdg_vendas:'vendas', cdg_materiais:'materiais', cdg_produtos:'produtos_catalogo', cdg_estoque_mov:'estoque_movimentacoes', cdg_clientes:'clientes' };
 const load  = k => { try { return JSON.parse(localStorage.getItem(k)) || []; } catch { return []; } };
 const loadO = k => { try { return JSON.parse(localStorage.getItem(k)) || {}; } catch { return {}; } };
 
@@ -2430,14 +2524,28 @@ function getClienteKey(p) {
 
 function aggregateClientes() {
   const pedidos = load(K.P);
+  const cadastrados = load(K.CLI);
   const map = {};
-  pedidos.forEach(p => {
-    const key = getClienteKey(p);
-    if (!map[key]) map[key] = { key, nome: p.nome, whatsapp: p.whatsapp, pedidos: [] };
-    map[key].pedidos.push(p);
-    if (p.nome)     map[key].nome     = p.nome;
-    if (p.whatsapp) map[key].whatsapp = p.whatsapp;
+
+  // Clientes cadastrados de verdade entram primeiro (mesmo sem nenhum pedido ainda)
+  cadastrados.forEach(c => {
+    map['cli:' + c.id] = { key: 'cli:' + c.id, clienteId: c.id, nome: c.nome, whatsapp: c.whatsapp, obs: c.obs, cadastrado: true, pedidos: [] };
   });
+
+  pedidos.forEach(p => {
+    let key;
+    if (p.clienteId && map['cli:' + p.clienteId]) {
+      key = 'cli:' + p.clienteId;
+    } else {
+      // Pedido legado (ou cliente vinculado que foi excluído) — agrupa por nome/whatsapp como antes
+      key = 'legacy:' + getClienteKey(p);
+      if (!map[key]) map[key] = { key, clienteId: null, nome: p.nome, whatsapp: p.whatsapp, cadastrado: false, pedidos: [] };
+      if (p.nome)     map[key].nome     = p.nome;
+      if (p.whatsapp) map[key].whatsapp = p.whatsapp;
+    }
+    map[key].pedidos.push(p);
+  });
+
   return Object.values(map).map(c => {
     const validos = c.pedidos.filter(p => p.status !== 'Cancelado');
     const totalGasto = validos.reduce((s, p) => s + (p.total || 0), 0);
@@ -2450,6 +2558,118 @@ function aggregateClientes() {
       primeiraCompra: datas.length ? datas[0] : null
     };
   }).sort((a, b) => (b.ultimaCompra || '').localeCompare(a.ultimaCompra || ''));
+}
+
+/* -- Cadastro de cliente (CRUD de verdade) -- */
+function openClienteFormModal(c = null) {
+  document.getElementById('modal-cliente-form-title').textContent = c ? 'Editar cliente' : 'Novo cliente';
+  document.getElementById('cf-id').value        = c?.id || '';
+  document.getElementById('cf-nome').value      = c?.nome || '';
+  document.getElementById('cf-whatsapp').value  = c?.whatsapp || '';
+  document.getElementById('cf-obs').value       = c?.obs || '';
+  document.getElementById('cf-delete-btn').style.display = c ? 'inline-flex' : 'none';
+  openModal('modal-cliente-form');
+}
+
+function saveClienteForm() {
+  const nome = document.getElementById('cf-nome').value.trim();
+  if (!nome) { showToast('Informe o nome do cliente'); return; }
+  const id = document.getElementById('cf-id').value || 'cli' + Date.now();
+  const cs = load(K.CLI);
+  const idx = cs.findIndex(x => x.id === id);
+  const obj = {
+    id, nome,
+    whatsapp: document.getElementById('cf-whatsapp').value.trim(),
+    obs:      document.getElementById('cf-obs').value.trim(),
+    criado:   idx >= 0 ? (cs[idx].criado || new Date().toISOString()) : new Date().toISOString()
+  };
+  if (idx >= 0) cs[idx] = obj; else cs.push(obj);
+  save(K.CLI, cs);
+  closeModal('modal-cliente-form');
+  if (currentScreen === 'clientes') renderClientes();
+  showToast('Cliente salvo.');
+}
+
+function deleteClienteForm() {
+  const id = document.getElementById('cf-id').value;
+  if (!id) return;
+  if (!confirm('Excluir este cliente? Os pedidos vinculados mantêm o nome/WhatsApp salvos, mas perdem o vínculo com o cadastro.')) return;
+  fbDel('clientes', id);
+  save(K.CLI, load(K.CLI).filter(c => c.id !== id));
+  const ps = load(K.P);
+  let mudou = false;
+  ps.forEach(p => { if (p.clienteId === id) { p.clienteId = ''; mudou = true; } });
+  if (mudou) save(K.P, ps);
+  closeModal('modal-cliente-form');
+  closeModal('modal-cliente');
+  if (currentScreen === 'clientes') renderClientes();
+  showToast('Cliente excluído.');
+}
+
+// Transforma um cliente "legado" (agrupado por nome/whatsapp) em um cadastro de verdade,
+// vinculando retroativamente todos os pedidos correspondentes
+function migrarClienteLegado(legacyKey) {
+  const c = aggregateClientes().find(x => x.key === legacyKey);
+  if (!c) return;
+  const id = 'cli' + Date.now();
+  const obj = { id, nome: c.nome || '', whatsapp: c.whatsapp || '', obs: '', criado: new Date().toISOString() };
+  const cs = load(K.CLI); cs.push(obj); save(K.CLI, cs);
+  const legacyPlainKey = legacyKey.replace('legacy:', '');
+  const ps = load(K.P);
+  let mudou = false;
+  ps.forEach(p => { if (!p.clienteId && getClienteKey(p) === legacyPlainKey) { p.clienteId = id; mudou = true; } });
+  if (mudou) save(K.P, ps);
+  showToast('Cliente cadastrado e pedidos vinculados!');
+  if (currentScreen === 'clientes') renderClientes();
+  openClienteDetail('cli:' + id);
+}
+
+/* -- Seletor de cliente dentro do pedido (com atalho de cadastro rápido) -- */
+function populateClienteSelectPedido(selectedId) {
+  const cs = load(K.CLI);
+  const sel = document.getElementById('p-cliente-select');
+  sel.innerHTML = '<option value="">— Sem vincular (digitar manualmente) —</option>'
+    + cs.map(c => `<option value="${c.id}">${c.nome}${c.whatsapp ? ' · ' + c.whatsapp : ''}</option>`).join('')
+    + '<option value="__new__">➕ Cadastrar novo cliente...</option>';
+  sel.value = selectedId || '';
+}
+
+function onClienteSelectChange(sel) {
+  if (sel.value === '__new__') {
+    const prev = document.getElementById('p-cliente-id').value || '';
+    sel.value = prev; // mantém o valor anterior visualmente até o cadastro rápido resolver
+    openClienteQuickModal();
+    return;
+  }
+  document.getElementById('p-cliente-id').value = sel.value;
+  if (sel.value) {
+    const c = load(K.CLI).find(x => x.id === sel.value);
+    if (c) {
+      document.getElementById('p-nome').value     = c.nome || '';
+      document.getElementById('p-whatsapp').value = c.whatsapp || '';
+    }
+  }
+}
+
+function openClienteQuickModal() {
+  document.getElementById('cq-nome').value = '';
+  document.getElementById('cq-whatsapp').value = '';
+  openModal('modal-cliente-quick');
+  setTimeout(() => document.getElementById('cq-nome')?.focus(), 250);
+}
+
+function saveClienteQuick() {
+  const nome = document.getElementById('cq-nome').value.trim();
+  if (!nome) { showToast('Informe o nome do cliente'); return; }
+  const id = 'cli' + Date.now();
+  const obj = { id, nome, whatsapp: document.getElementById('cq-whatsapp').value.trim(), obs: '', criado: new Date().toISOString() };
+  const cs = load(K.CLI); cs.push(obj); save(K.CLI, cs);
+  closeModal('modal-cliente-quick');
+  populateClienteSelectPedido(id);
+  document.getElementById('p-cliente-id').value = id;
+  document.getElementById('p-nome').value = obj.nome;
+  document.getElementById('p-whatsapp').value = obj.whatsapp;
+  showToast('Cliente cadastrado! Já selecionado.');
 }
 
 // Regras simples de fidelização — ajustável conforme o negócio crescer
@@ -2486,7 +2706,10 @@ function clienteCardHTML(c) {
         <div class="pedido-nome">${c.nome || '—'}</div>
         <div class="pedido-sub">${c.qtdPedidos} pedido${c.qtdPedidos === 1 ? '' : 's'} · última compra ${c.ultimaCompra ? formatDate(c.ultimaCompra) : '—'}</div>
       </div>
-      ${fid ? `<span class="badge badge-pronto">${fid.label}</span>` : ''}
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+        ${fid ? `<span class="badge badge-pronto">${fid.label}</span>` : ''}
+        ${!c.cadastrado ? `<span class="badge badge-emproducao">Não cadastrado</span>` : ''}
+      </div>
     </div>
     <div class="pedido-meta">
       <span class="pedido-meta-item">Total gasto: ${fmtM(c.totalGasto)}</span>
@@ -2511,6 +2734,13 @@ function openClienteDetail(key) {
   document.getElementById('cli-nome').textContent = c.nome || '—';
   document.getElementById('cli-sub').textContent   = c.whatsapp ? ('WhatsApp: ' + c.whatsapp) : 'Sem WhatsApp cadastrado';
   document.getElementById('cli-badge').innerHTML   = fid ? `<span class="badge badge-pronto">${fid.label}</span>` : '';
+
+  document.getElementById('cli-cadastro-acoes').innerHTML = c.cadastrado
+    ? `<button class="btn btn-ghost btn-sm" onclick="openClienteFormModal(${JSON.stringify({id:c.clienteId,nome:c.nome,whatsapp:c.whatsapp,obs:c.obs}).replace(/"/g,'&quot;')})">✎ Editar cadastro</button>${c.obs?`<div style="font-size:12px;color:var(--text-mid);margin-top:8px;line-height:1.6">${c.obs}</div>`:''}`
+    : `<div class="card" style="background:var(--rose-pale);border-color:var(--rose-light);padding:12px 14px;margin:0">
+        <div style="font-size:12px;color:var(--text-mid);line-height:1.6;margin-bottom:10px">Este cliente ainda não tem cadastro próprio — os dados vêm dos pedidos. Cadastre para editar nome/WhatsApp diretamente e manter tudo vinculado.</div>
+        <button class="btn btn-rose btn-sm" style="width:100%" onclick="migrarClienteLegado('${c.key}')">Cadastrar este cliente</button>
+      </div>`;
 
   document.getElementById('cli-stats').innerHTML = `
     <div class="fin-grid">
@@ -2545,7 +2775,7 @@ function openClienteDetail(key) {
 function abrirClienteDoPedido(id) {
   const p = load(K.P).find(x => x.id === id);
   if (!p) { showToast('Pedido não encontrado.'); return; }
-  const key = getClienteKey(p);
+  const key = (p.clienteId && load(K.CLI).some(c => c.id === p.clienteId)) ? 'cli:' + p.clienteId : 'legacy:' + getClienteKey(p);
   closeModal('modal-detalhe');
   openClienteDetail(key);
 }
@@ -2572,6 +2802,8 @@ function openPedidoModal(p=null) {
   document.getElementById('modal-pedido-title').textContent = p ? 'Editar pedido' : 'Novo pedido';
   const set = (id, val) => { document.getElementById(id).value = val||''; };
   set('pedido-id', p?.id); set('p-nome',p?.nome); set('p-whatsapp',p?.whatsapp);
+  set('p-cliente-id', p?.clienteId);
+  populateClienteSelectPedido(p?.clienteId);
   document.getElementById('p-status').value = p?.status||'Novo';
   set('p-produtos',p?.produtos);
   set('p-qtd',p?.qtd||1); set('p-total',p?.total); set('p-pago',p?.pago);
@@ -2669,6 +2901,7 @@ function savePedido() {
     id, nome, dataEntrega,
     criado:      existente?.criado || agora,
     statusDesde: (existente && existente.status===statusNovo) ? (existente.statusDesde || existente.criado || agora) : agora,
+    clienteId: document.getElementById('p-cliente-id').value || '',
     whatsapp:  document.getElementById('p-whatsapp').value,
     status:    statusNovo,
     produtos:  document.getElementById('p-produtos').value,
@@ -2710,9 +2943,8 @@ function renderEstoqueContent(tab){
   const el = document.getElementById('estoque-content');
   if (tab==='materiais'){
     const mats = load(K.M);
-    const btnEntrada = `<button class="btn btn-primary" style="width:100%;margin-bottom:14px" onclick="openEstoqueEntradaModal()">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Registrar entrada de estoque
+    const btnEntrada = `<button class="btn btn-ghost" style="width:100%;margin-bottom:14px" onclick="openEstoqueEntradaModal()">
+      📦 Comprei mais material (dar entrada no estoque)
     </button>`;
     el.innerHTML = btnEntrada + (mats.length ? mats.map(m=>materialCardHTML(m)).join('') : emptyHTML('Nenhum material cadastrado.<br><strong>Toque no + para adicionar.</strong>'));
   } else {
@@ -2793,9 +3025,10 @@ function openProdutoModal(p=null){
 function populateMaterialSelect(){
   const mats = load(K.M);
   const sel = document.getElementById('pr-comp-mat');
-  sel.innerHTML = mats.length
+  sel.innerHTML = (mats.length
     ? mats.map(m=>`<option value="${m.id}">${m.nome} (${fmtM(m.custo)}/${m.unidade||'un'})</option>`).join('')
-    : '<option value="">Cadastre um material primeiro</option>';
+    : '<option value="">Cadastre um material primeiro</option>')
+    + '<option value="__new__">➕ Cadastrar novo material...</option>';
 }
 
 function renderComposicaoList(){
@@ -2943,13 +3176,71 @@ function deleteMaterial(id){
   showToast('Material excluído.');
 }
 
+/* -- Cadastro rápido de material (atalho a partir de outros selects) -- */
+let _matQuickTarget = null; // guarda qual select disparou o atalho: 'pr-comp-mat' ou 'ee-mat'
+
+function onMaterialSelectChange(sel){
+  if (sel.value === '__new__') {
+    _matQuickTarget = sel.id;
+    // volta o select para um valor válido, para não deixar "__new__" selecionado se o usuário cancelar
+    const primeiraOpcaoValida = Array.from(sel.options).find(o => o.value && o.value !== '__new__');
+    sel.value = primeiraOpcaoValida ? primeiraOpcaoValida.value : '';
+    openMaterialQuick();
+    return;
+  }
+  if (sel.id === 'ee-mat') onEeMatChange();
+}
+
+function openMaterialQuick(){
+  document.getElementById('mq-nome').value = '';
+  document.getElementById('mq-unidade').value = 'unidade';
+  document.getElementById('mq-custo').value = '';
+  document.getElementById('mq-estoque').value = '';
+  openModal('modal-material-quick');
+  setTimeout(()=>document.getElementById('mq-nome')?.focus(), 250);
+}
+
+function saveMaterialQuick(){
+  const nome  = document.getElementById('mq-nome').value.trim();
+  const custo = parseFloat(document.getElementById('mq-custo').value);
+  if (!nome){ showToast('Informe o nome do material'); return; }
+  if (isNaN(custo) || custo<0){ showToast('Informe o custo unitário'); return; }
+  const id = 'mat'+Date.now();
+  const obj = {
+    id, nome,
+    unidade: document.getElementById('mq-unidade').value,
+    custo,
+    estoque: parseFloat(document.getElementById('mq-estoque').value)||0,
+    estoqueMin: 0
+  };
+  const ms = load(K.M);
+  ms.push(obj);
+  save(K.M, ms);
+  closeModal('modal-material-quick');
+
+  // Repopula o select de origem e já seleciona o material recém-criado, sem fechar o modal em que a pessoa estava
+  if (_matQuickTarget === 'pr-comp-mat') {
+    populateMaterialSelect();
+    document.getElementById('pr-comp-mat').value = id;
+  } else if (_matQuickTarget === 'ee-mat') {
+    const sel = document.getElementById('ee-mat');
+    sel.innerHTML = ms.map(m=>`<option value="${m.id}">${m.nome} (${m.unidade||'un'})</option>`).join('')
+      + '<option value="__new__">➕ Cadastrar novo material...</option>';
+    sel.value = id;
+    onEeMatChange();
+  }
+  _matQuickTarget = null;
+  showToast('Material cadastrado! Já selecionado.');
+}
+
 /* -- Entrada de estoque (compra de material) -- */
 function openEstoqueEntradaModal(matId){
   const mats = load(K.M);
   const sel = document.getElementById('ee-mat');
-  sel.innerHTML = mats.length
+  sel.innerHTML = (mats.length
     ? mats.map(m=>`<option value="${m.id}">${m.nome} (${m.unidade||'un'})</option>`).join('')
-    : '<option value="">Cadastre um material primeiro</option>';
+    : '<option value="">Cadastre um material primeiro</option>')
+    + '<option value="__new__">➕ Cadastrar novo material...</option>';
   if (matId) sel.value = matId;
   document.getElementById('ee-qtd').value = '';
   document.getElementById('ee-data').value = todayStr();
@@ -3584,7 +3875,8 @@ function handleFab(){
     else openPedidoModal();
   } else if(currentScreen==='vendas'){openVendaModal();}
   else if(currentScreen==='produtos'){ openProdutoModal(); }
-  else if(currentScreen==='estoque'){ estoqueTab==='materiais' ? openMaterialModal() : openEstoqueEntradaModal(); }
+  else if(currentScreen==='estoque'){ openMaterialModal(); }
+  else if(currentScreen==='clientes'){ openClienteFormModal(); }
   else openPedidoModal();
 }
 
