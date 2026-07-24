@@ -51,15 +51,42 @@
   --font-script:  'Pinyon Script', cursive;
 }
 
+/* ── DARK THEME OVERRIDES ─────────────────────────── */
+:root[data-theme="dark"] {
+  --blue:        #6FB6DE;
+  --blue-dark:   #7CC3E8;
+  --blue-deep:   #B7E1F5;
+  --blue-light:  #274456;
+  --blue-pale:   #1B2E38;
+  --rose:        #F0819F;
+  --rose-dark:   #F6A0B8;
+  --rose-light:  #4A2C38;
+  --rose-pale:   #2C1B22;
+  --cream:       #1C1719;
+  --cream-dark:  #262023;
+  --gold:        #E8C36B;
+  --text:        #F2E8EC;
+  --text-mid:    #C6B4BC;
+  --text-soft:   #8C7680;
+  --surface:     #241E21;
+  --border:      #3A3237;
+  --border-light:#2E282B;
+  --shadow-xs: 0 1px 4px rgba(0,0,0,.25);
+  --shadow-sm: 0 2px 10px rgba(0,0,0,.3);
+  --shadow-md: 0 6px 24px rgba(0,0,0,.35);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,.5);
+}
+:root[data-theme="dark"] body { background: var(--cream); }
+
 /* ── RESET ──────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { -webkit-tap-highlight-color: transparent; }
+html { -webkit-tap-highlight-color: transparent; height: 100%; overflow: hidden; }
 body {
   font-family: var(--font-body);
   background: var(--cream);
   color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
+  height: 100%;
+  overflow: hidden;
   font-size: 15px;
   line-height: 1.5;
 }
@@ -80,12 +107,13 @@ a { color: inherit; text-decoration: none; }
 
 /* ── LOGIN ──────────────────────────────────────── */
 #login-screen {
-  min-height: 100dvh;
+  height: 100dvh;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   background: var(--cream);
   padding: 24px;
-  position: relative; overflow: hidden;
+  position: relative;
+  overflow-x: hidden; overflow-y: auto;
 }
 /* decorative arcs */
 #login-screen::before {
@@ -257,94 +285,178 @@ select.form-control {
 /* content */
 .content {
   flex: 1; overflow-y: auto;
-  padding: 20px 16px 90px;
+  padding: 20px 16px 40px;
   overscroll-behavior: contain;
 }
 
-/* ── SIDE NAV (fixed, floats over content, never in normal flow) ─── */
-:root { --side-nav-w: 226px; }
+/* ── SIDEBAR MENU (navegação principal) ───────────── */
+.side-menu-toggle {
+  position: fixed; left: 0; top: 50%; transform: translateY(-50%);
+  z-index: 250;
+  background: var(--surface);
+  border: 1px solid var(--border-light); border-left: none;
+  border-radius: 0 14px 14px 0;
+  padding: 14px 9px;
+  display: flex; flex-direction: column; align-items: center; gap: 7px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  color: var(--text-mid);
+  transition: background .15s, color .15s;
+}
+.side-menu-toggle:hover, .side-menu-toggle:focus-visible { background: var(--blue-pale); color: var(--blue-dark); }
+.side-menu-toggle svg { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+.side-menu-toggle span {
+  font-size: 9px; font-weight: 700; letter-spacing: 1px;
+  writing-mode: vertical-rl; text-orientation: mixed;
+}
 
-/* darkened layer behind the drawer, mobile only */
-.side-nav-overlay {
+.sidebar-overlay {
   position: fixed; inset: 0;
   background: rgba(46,42,38,.45);
-  backdrop-filter: blur(2px);
-  z-index: 490;
-  opacity: 0; pointer-events: none;
-  transition: opacity .25s ease;
+  backdrop-filter: blur(3px);
+  z-index: 400; display: none;
+  animation: fadeIn .2s ease;
 }
-.side-nav-overlay.active { opacity: 1; pointer-events: auto; }
+.sidebar-overlay.active { display: block; }
+@keyframes fadeIn { from{ opacity:0 } to{ opacity:1 } }
 
-/* small floating tab fixed to the left edge, mobile only */
-.menu-fab {
-  position: fixed;
-  left: 0; top: 50%; transform: translateY(-50%);
-  width: 34px; height: 68px;
-  background: linear-gradient(135deg, var(--blue-dark), var(--rose));
-  border: none; border-radius: 0 16px 16px 0;
-  display: flex; align-items: center; justify-content: center;
-  z-index: 480; cursor: pointer;
-  box-shadow: 3px 0 14px rgba(180,60,100,.28);
-  padding: 0;
-}
-.menu-fab svg { width: 18px; height: 18px; }
+/* A navegação lateral vive fora do #app (nível do body) para nunca fazer
+   parte do fluxo do conteúdo principal. Por isso sua visibilidade é
+   controlada pelo estado de sessão (classe .app-active no <body>),
+   e não pela hierarquia do DOM. */
+#side-menu-toggle, #sidebar { display: none; }
+body.app-active #side-menu-toggle { display: flex; }
+body.app-active #sidebar { display: flex; }
 
-/* the sliding drawer / permanent sidebar itself */
-.side-nav {
+.sidebar {
   position: fixed; top: 0; left: 0; bottom: 0;
-  width: var(--side-nav-w);
+  width: 280px; max-width: 85vw;
   background: var(--surface);
-  border-right: 1px solid var(--border-light);
+  z-index: 401;
   box-shadow: var(--shadow-lg);
-  z-index: 500;
-  display: flex; flex-direction: column;
-  padding: 22px 0 14px;
-  overflow-y: auto;
   transform: translateX(-100%);
-  transition: transform .3s cubic-bezier(.34,1.05,.64,1);
+  transition: transform .32s cubic-bezier(.34,1.05,.64,1);
+  display: flex; flex-direction: column;
+  padding-top: env(safe-area-inset-top, 0px);
 }
-.side-nav.open { transform: translateX(0); }
+.sidebar.active { transform: translateX(0); }
 
-.side-nav-brand {
-  font-family: var(--font-script);
-  font-size: 30px; color: var(--blue-dark);
-  text-align: center; padding: 0 18px 18px;
-  border-bottom: 1px solid var(--border-light); margin-bottom: 10px;
+/* brand */
+.sidebar-header {
+  padding: 26px 20px 18px;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid var(--border-light);
 }
-.side-nav-close {
-  position: absolute; top: 14px; right: 14px;
-  width: 30px; height: 30px; border: none; background: var(--cream-dark);
-  border-radius: 8px; display: flex; align-items: center; justify-content: center;
-  color: var(--text-mid); cursor: pointer;
+.sidebar-brand-title {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 21px; font-weight: 600; font-style: italic;
+  letter-spacing: .3px; line-height: 1.15;
+  color: var(--blue-deep);
+}
+.sidebar-brand-sub {
+  display: block; margin-top: 5px;
+  font-family: var(--font-body);
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 1.8px; text-transform: uppercase;
+  color: var(--rose);
+}
+.sidebar-close {
+  width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+  background: none; border: none; cursor: pointer;
+  color: var(--text-mid);
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.sidebar-close:hover { background: var(--cream-dark); }
+.sidebar-close svg { width: 18px; height: 18px; }
+
+/* nav list */
+.sidebar-nav {
+  flex: 1; overflow-y: auto;
+  padding: 14px 12px;
+  display: flex; flex-direction: column; gap: 3px;
 }
 
 .nav-item {
-  display: flex; align-items: center; gap: 13px;
-  width: 100%; text-align: left;
-  padding: 12px 20px;
-  cursor: pointer; border: none; background: none;
-  transition: background .15s, color .15s; position: relative;
-  color: var(--text-mid); font-size: 13.5px; font-weight: 500;
+  display: flex; align-items: center; gap: 14px;
+  width: 100%; padding: 12px 14px; border-radius: 13px;
+  min-height: 46px;
+  cursor: pointer; color: var(--text-mid);
+  font: inherit; font-size: 14px; font-weight: 500;
+  border: none; background: none; text-align: left;
+  transition: background .15s, color .15s;
 }
-.nav-item svg { display: block; width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; flex-shrink: 0; transition: stroke .15s; }
-.nav-item span { transition: color .15s, font-weight .15s; }
-.nav-item.active { color: var(--blue-dark); background: var(--blue-pale); font-weight: 700; }
-.nav-item.active::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--blue-dark); }
-.nav-item.active svg { stroke: var(--blue-dark); }
-.nav-badge {
-  margin-left: auto;
+.nav-item:hover { background: var(--cream-dark); }
+.nav-item:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.nav-item.active { background: var(--blue-pale); color: var(--blue-dark); font-weight: 700; }
+.nav-item.active .nav-item-icon { stroke: var(--blue-dark); }
+.nav-item-icon { width: 19px; height: 19px; flex-shrink: 0; }
+.nav-item-label { flex: 1; }
+.nav-item-badge {
   background: var(--rose); color: white;
-  border-radius: 20px; min-width: 16px; height: 16px;
-  font-size: 9px; font-weight: 700;
+  border-radius: 20px; min-width: 18px; height: 18px;
+  font-size: 10px; font-weight: 700; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  padding: 0 4px;
+  padding: 0 5px;
 }
+.nav-toggle-caret { width: 15px; height: 15px; flex-shrink: 0; transition: transform .22s ease; }
+.nav-group.open > .nav-item .nav-toggle-caret { transform: rotate(180deg); }
 
-/* Desktop: side-nav becomes a permanent, always-visible sidebar */
-@media (min-width: 900px) {
-  .side-nav { transform: translateX(0); box-shadow: none; }
-  .side-nav-overlay, .menu-fab, .side-nav-close { display: none !important; }
-  #app { padding-left: var(--side-nav-w); }
+/* submenus */
+.nav-children {
+  overflow: hidden; max-height: 0;
+  transition: max-height .28s ease;
+  margin: 2px 0 2px 21px; padding-left: 16px;
+  border-left: 1.5px solid var(--border);
+  display: flex; flex-direction: column; gap: 1px;
+}
+.nav-group.open .nav-children { max-height: 300px; }
+
+.nav-child {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 10px 12px; border-radius: 10px;
+  min-height: 40px;
+  cursor: pointer; color: var(--text-soft);
+  font: inherit; font-size: 13px; font-weight: 500;
+  border: none; background: none; text-align: left;
+  transition: background .15s, color .15s;
+}
+.nav-child:hover { background: var(--cream-dark); color: var(--text-mid); }
+.nav-child:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.nav-child.active { background: var(--rose-pale); color: var(--rose-dark); font-weight: 700; }
+.nav-child-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .55; flex-shrink: 0; }
+
+/* bottom actions */
+.sidebar-bottom {
+  padding: 12px; border-top: 1px solid var(--border-light);
+  display: flex; flex-direction: column; gap: 3px;
+  padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+}
+.sidebar-action {
+  display: flex; align-items: center; gap: 14px;
+  width: 100%; padding: 12px 14px; border-radius: 13px;
+  min-height: 44px;
+  cursor: pointer; color: var(--text-mid);
+  font: inherit; font-size: 13px; font-weight: 500;
+  border: none; background: none; text-align: left;
+  transition: background .15s, color .15s;
+}
+.sidebar-action:hover { background: var(--cream-dark); }
+.sidebar-action:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+.sidebar-action svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+/* ── DESKTOP: sidebar fixa, sem overlay ───────────── */
+@media (min-width: 960px) {
+  .side-menu-toggle { display: none; }
+  .sidebar-overlay { display: none !important; }
+  .sidebar {
+    transform: none; box-shadow: none;
+    border-right: 1px solid var(--border-light);
+  }
+  .sidebar-close { display: none; }
+  #app.active { padding-left: 280px; }
 }
 
 /* ── SCREENS ─────────────────────────────────────── */
@@ -697,7 +809,7 @@ select.form-control {
 
 /* ── FAB ─────────────────────────────────────────── */
 .fab {
-  position: fixed; bottom: 22px; right: 18px;
+  position: fixed; bottom: 20px; right: 18px;
   width: 52px; height: 52px; border-radius: 50%;
   background: linear-gradient(135deg, var(--blue-dark), var(--rose));
   border: none; color: white;
@@ -711,7 +823,7 @@ select.form-control {
 
 /* ── TOAST ───────────────────────────────────────── */
 .toast {
-  position: fixed; bottom: 84px; left: 50%; transform: translateX(-50%);
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
   background: var(--text); color: white;
   padding: 11px 22px; border-radius: 22px;
   font-size: 13px; font-weight: 500; white-space: nowrap;
@@ -1086,47 +1198,51 @@ select.form-control {
     </div>
 
   </main>
-
 </div><!-- /app -->
 
-<!-- SIDE NAV: fixed to the left edge of the viewport, outside the page flow -->
-<div class="side-nav-overlay" id="side-nav-overlay" onclick="closeSideNav()" style="display:none"></div>
+<!-- ════════════════════════════════════════════════
+     NAVEGAÇÃO LATERAL (fora do #app de propósito)
+     Botão, overlay e painel vivem no nível do <body>,
+     fixos à viewport, para nunca fazer parte do fluxo
+     do conteúdo principal nem ficar sujeitos a
+     transform/overflow de ancestrais do layout de página.
+════════════════════════════════════════════════ -->
 
-<button class="menu-fab" id="menu-fab" onclick="toggleSideNav()" aria-label="Abrir menu" style="display:none">
-  <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+<!-- BOTÃO SANDUÍCHE (mobile) — aba fixa na borda esquerda da tela -->
+<button class="side-menu-toggle" id="side-menu-toggle" onclick="toggleSidebar()" aria-label="Abrir menu" aria-expanded="false" aria-controls="sidebar">
+  <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  <span>MENU</span>
 </button>
 
-<nav class="side-nav" id="side-nav" style="display:none">
-  <button class="side-nav-close" onclick="closeSideNav()" aria-label="Fechar menu">
-    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-  </button>
-  <div class="side-nav-brand">Graça em Papel</div>
-  <button class="nav-item active" onclick="navigate('dashboard')">
-    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    <span>Início</span>
-  </button>
-  <button class="nav-item" onclick="navigate('pedidos')">
-    <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-    <span>Pedidos</span>
-  </button>
-  <button class="nav-item" onclick="navigate('agenda')">
-    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-    <span>Agenda</span>
-    <span class="nav-badge" id="notif-badge" style="display:none">!</span>
-  </button>
-  <button class="nav-item" onclick="navigate('financeiro')">
-    <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-    <span>Financeiro</span>
-  </button>
-  <button class="nav-item" onclick="navigate('vendas')">
-    <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-    <span>Vendas</span>
-  </button>
-  <button class="nav-item" onclick="navigate('config')">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-    <span>Config</span>
-  </button>
-</nav>
+<!-- OVERLAY DO MENU LATERAL -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- MENU LATERAL (componente de navegação data-driven) -->
+<aside class="sidebar" id="sidebar" aria-label="Menu principal">
+  <div class="sidebar-header">
+    <div class="sidebar-brand">
+      <span class="sidebar-brand-title">Central da Graça</span>
+      <span class="sidebar-brand-sub">Gestão do Ateliê</span>
+    </div>
+    <button class="sidebar-close" onclick="closeSidebar()" aria-label="Fechar menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+
+  <!-- itens injetados via JS a partir de MENU_CONFIG (renderSidebarNav) -->
+  <nav class="sidebar-nav" id="sidebar-nav" aria-label="Navegação principal"></nav>
+
+  <div class="sidebar-bottom">
+    <button type="button" class="sidebar-action" id="theme-toggle-btn" onclick="toggleTheme()">
+      <svg id="theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <span id="theme-label">Modo escuro</span>
+    </button>
+    <button type="button" class="sidebar-action" data-screen="config" onclick="navigate('config')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Configurações</span>
+    </button>
+  </div>
+</aside>
 
 <!-- FAB -->
 <button class="fab" id="fab" onclick="handleFab()" style="display:none">
@@ -1670,6 +1786,111 @@ let calDate = new Date();
 let composicaoAtual = [];   // materiais do produto sendo editado: {matId, qtd}
 let itensPedidoAtual = [];  // itens de catálogo do pedido sendo editado: {produtoId, produtoNome, qtd, precoUnit}
 
+/* ── MENU LATERAL: componente de navegação data-driven ───────────
+   Para adicionar, remover, reordenar ou criar submenus, edite apenas
+   o array MENU_CONFIG abaixo — o componente cuida do resto (render,
+   estado ativo, submenus, badges). ──────────────────────────────── */
+const NAV_ICONS = {
+  home:       '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  pedidos:    '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>',
+  agenda:     '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+  financeiro: '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+  vendas:     '<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>',
+  produtos:   '<path d="M20.59 13.41 13.42 20.6a2 2 0 0 1-2.83 0L2 12.01V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',
+  clientes:   '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+};
+
+const MENU_CONFIG = [
+  { id:'dashboard',  label:'Início',            screen:'dashboard',  icon:'home' },
+  { id:'pedidos',    label:'Pedidos',            screen:'pedidos',    icon:'pedidos' },
+  { id:'agenda',     label:'Agenda',             screen:'agenda',     icon:'agenda', badge:true },
+  { id:'financeiro', label:'Financeiro',         screen:'financeiro', icon:'financeiro' },
+  { id:'vendas',     label:'Vendas',             screen:'vendas',     icon:'vendas' },
+  { id:'produtos',   label:'Produtos & Estoque', screen:'produtos',   icon:'produtos',
+    children: [
+      { id:'produtos-catalogo',  label:'Catálogo',            screen:'produtos', param:'produtos'   },
+      { id:'produtos-materiais', label:'Materiais / Estoque', screen:'produtos', param:'materiais'  },
+      { id:'produtos-relatorio', label:'Relatório',           screen:'produtos', param:'relatorio'  },
+    ]
+  },
+  { id:'clientes',   label:'Clientes',           screen:'clientes',   icon:'clientes' },
+];
+
+let navExpanded = new Set(); // ids dos grupos com submenu abertos
+
+function _navItemActive(item){
+  if (item.screen !== currentScreen) return false;
+  if (item.param) return item.param === produtosTab;
+  return true;
+}
+
+function renderSidebarNav(){
+  const nav = document.getElementById('sidebar-nav');
+  if (!nav) return;
+  const atrasadosCount = load(K.P).filter(isAtrasado).length;
+
+  nav.innerHTML = MENU_CONFIG.map(item => {
+    if (item.children && item.children.length) {
+      const childActive = item.children.some(_navItemActive);
+      const isOpen = navExpanded.has(item.id) || childActive;
+      const childrenHTML = item.children.map(c => `
+        <button type="button" class="nav-child${_navItemActive(c)?' active':''}"
+          data-screen="${c.screen}" data-param="${c.param||''}"
+          onclick="navigate('${c.screen}'${c.param?`,'${c.param}'`:''})">
+          <span class="nav-child-dot" aria-hidden="true"></span>
+          <span class="nav-item-label">${c.label}</span>
+        </button>`).join('');
+      return `
+        <div class="nav-group${isOpen?' open':''}">
+          <button type="button" class="nav-item${childActive?' active':''}"
+            aria-expanded="${isOpen}" aria-controls="navgrp-${item.id}"
+            onclick="toggleNavGroup('${item.id}')">
+            <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">${NAV_ICONS[item.icon]||''}</svg>
+            <span class="nav-item-label">${item.label}</span>
+            <svg class="nav-toggle-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="nav-children" id="navgrp-${item.id}" role="group">${childrenHTML}</div>
+        </div>`;
+    }
+    const active = _navItemActive(item);
+    const badge = item.badge
+      ? (atrasadosCount>0 ? `<span class="nav-item-badge" id="notif-badge">${atrasadosCount}</span>` : `<span class="nav-item-badge" id="notif-badge" style="display:none">0</span>`)
+      : '';
+    return `
+      <button type="button" class="nav-item${active?' active':''}" data-screen="${item.screen}"
+        ${active?'aria-current="page"':''} onclick="navigate('${item.screen}')">
+        <svg class="nav-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">${NAV_ICONS[item.icon]||''}</svg>
+        <span class="nav-item-label">${item.label}</span>
+        ${badge}
+      </button>`;
+  }).join('');
+}
+
+function toggleNavGroup(id){
+  if (navExpanded.has(id)) navExpanded.delete(id); else navExpanded.add(id);
+  renderSidebarNav();
+}
+
+/* ── TEMA (claro / escuro) ────────────────────────── */
+function initTheme(){
+  setTheme(localStorage.getItem('cdg_theme') || 'light', true);
+}
+function setTheme(mode, silent){
+  document.documentElement.setAttribute('data-theme', mode);
+  if (!silent) localStorage.setItem('cdg_theme', mode);
+  else localStorage.setItem('cdg_theme', mode);
+  const icon  = document.getElementById('theme-icon');
+  const label = document.getElementById('theme-label');
+  if (label) label.textContent = mode==='dark' ? 'Modo claro' : 'Modo escuro';
+  if (icon)  icon.innerHTML = mode==='dark'
+    ? '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>'
+    : '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+}
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme') || 'light';
+  setTheme(cur === 'dark' ? 'light' : 'dark');
+}
+
 /* ── DEMO DATA ───────────────────────────────────── */
 function initDemo() {
   // Demo desativado — app usa dados reais do Firestore
@@ -1718,10 +1939,8 @@ window.fbSignedOut = function() {
     document.getElementById('app').classList.remove('active');
     document.getElementById('login-screen').style.display = 'flex';
     document.getElementById('fab').style.display = 'none';
-    closeSideNav();
-    document.getElementById('side-nav').style.display = 'none';
-    document.getElementById('menu-fab').style.display = 'none';
-    document.getElementById('side-nav-overlay').style.display = 'none';
+    document.body.classList.remove('app-active');
+    closeSidebar();
   }
 };
 
@@ -1733,20 +1952,16 @@ function doLogout() {
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('login-password').value = '';
   document.getElementById('fab').style.display = 'none';
-  closeSideNav();
-  document.getElementById('side-nav').style.display = 'none';
-  document.getElementById('menu-fab').style.display = 'none';
-  document.getElementById('side-nav-overlay').style.display = 'none';
+  document.body.classList.remove('app-active');
+  closeSidebar();
 }
 
 function bootApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').classList.add('active');
   document.getElementById('fab').style.display = 'flex';
-  document.getElementById('side-nav').style.display = 'flex';
-  document.getElementById('menu-fab').style.display = 'flex';
-  document.getElementById('side-nav-overlay').style.display = 'block';
   document.getElementById('logged-email').textContent = currentUser.email || '';
+  document.body.classList.add('app-active');
   applyVerse();
   navigate('dashboard');
   schedulePush();
@@ -1763,9 +1978,12 @@ function navigate(s, param) {
   currentScreen = s;
   document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
   document.getElementById('screen-'+s).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach((el,i) => {
-    el.classList.toggle('active', ['dashboard','pedidos','agenda','financeiro','vendas','config'][i] === s);
-  });
+  if (s === 'produtos' && param) {
+    produtosTab = param;
+    document.querySelectorAll('#screen-produtos .tab').forEach(t => t.classList.toggle('active', t.dataset.tab === param));
+  }
+  renderSidebarNav();
+  closeSidebar();
 
   const logo   = document.getElementById('topbar-logo');
   const title  = document.getElementById('topbar-title');
@@ -1788,30 +2006,15 @@ function navigate(s, param) {
   if (s==='vendas')      renderVendas();
   if (s==='produtos')    renderProdutosScreen();
   if (s==='clientes')    renderClientes();
-
-  closeSideNav(); // no-op visually on desktop (side-nav stays fixed open via CSS)
 }
 
 function goToScreen(s, filter) { navigate(s, filter); }
 function handleBack()    {}
 function handleTopAction() { document.getElementById('search-pedidos')?.focus(); }
 
-/* ── SIDE NAV (fixed drawer, overlays content, never pushes layout) ── */
-function toggleSideNav() {
-  document.getElementById('side-nav').classList.toggle('open');
-  document.getElementById('side-nav-overlay').classList.toggle('active');
-}
-function openSideNav() {
-  document.getElementById('side-nav').classList.add('open');
-  document.getElementById('side-nav-overlay').classList.add('active');
-}
-function closeSideNav() {
-  document.getElementById('side-nav').classList.remove('open');
-  document.getElementById('side-nav-overlay').classList.remove('active');
-}
-
 /* ── DASHBOARD ───────────────────────────────────── */
 function renderDashboard() {
+  renderSidebarNav();
   renderAvisosEntrega();
   renderMetaCard();
   renderFinResumoDashboard();
@@ -2651,6 +2854,7 @@ function renderProdutosScreen(){ renderProdutosContent(produtosTab); }
 function setProdutosTab(el){
   document.querySelectorAll('#screen-produtos .tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active'); produtosTab = el.dataset.tab; renderProdutosContent(produtosTab);
+  renderSidebarNav();
 }
 
 function renderProdutosContent(tab){
@@ -3554,6 +3758,27 @@ function checkPush(){
   });
 }
 
+/* ── SIDEBAR MENU ────────────────────────────────── */
+function _syncMenuToggleAria(){
+  const isOpen = document.getElementById('sidebar').classList.contains('active');
+  document.getElementById('side-menu-toggle')?.setAttribute('aria-expanded', isOpen);
+}
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('active');
+  document.getElementById('sidebar-overlay').classList.toggle('active');
+  _syncMenuToggleAria();
+}
+function openSidebar(){
+  document.getElementById('sidebar').classList.add('active');
+  document.getElementById('sidebar-overlay').classList.add('active');
+  _syncMenuToggleAria();
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('active');
+  document.getElementById('sidebar-overlay').classList.remove('active');
+  _syncMenuToggleAria();
+}
+
 /* ── MODAL UTILS ─────────────────────────────────── */
 function openModal(id){ document.getElementById(id).classList.add('active'); }
 function closeModal(id){ document.getElementById(id).classList.remove('active'); }
@@ -3593,6 +3818,7 @@ document.getElementById('manifest-link').href=URL.createObjectURL(new Blob([JSON
 
 /* ── INIT ────────────────────────────────────────── */
 window.addEventListener('DOMContentLoaded', () => {
+  initTheme();
   applyVerse();
   // Só abre o app se esta sessão de navegador fez login (K.U salvo localmente)
   const session = loadO(K.U);
