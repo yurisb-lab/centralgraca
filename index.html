@@ -2128,6 +2128,15 @@ function setChip(el, gid) {
   if (currentScreen==='pedidos') filterPedidos();
 }
 
+// Resumo curto dos produtos de um pedido: usa os itens do catálogo (com qtd) quando existirem,
+// senão cai para o texto livre digitado em "Produtos vendidos"
+function produtosResumoPedido(p) {
+  if (p.itens && p.itens.length) {
+    return p.itens.map(i => `${i.qtd}x ${i.produtoNome}`).join(', ');
+  }
+  return p.produtos || '';
+}
+
 function pedidoCardHTML(p) {
   const atras = isAtrasado(p);
   const dias  = atras ? diasAtraso(p) : 0;
@@ -2135,6 +2144,8 @@ function pedidoCardHTML(p) {
   const sClass= { 'Novo':'s-novo','Em Produção':'s-producao','Pronto':'s-pronto','Entregue':'s-entregue','Cancelado':'s-cancelado' }[p.status]||'';
   const bClass= { 'Novo':'badge-novo','Em Produção':'badge-emproducao','Pronto':'badge-pronto','Entregue':'badge-entregue','Cancelado':'badge-cancelado' }[p.status]||'';
   const wa = p.whatsapp ? `https://wa.me/55${p.whatsapp.replace(/\D/g,'')}` : null;
+  const qtdTotalItens = (p.itens||[]).reduce((s,i)=>s+(i.qtd||0),0);
+  const produtosResumo = produtosResumoPedido(p);
   return `
   <div class="pedido-card ${atras?'s-atrasado':sClass}" onclick="openDetail('${p.id}')">
     <div class="pedido-card-header">
@@ -2152,8 +2163,9 @@ function pedidoCardHTML(p) {
         <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         ${p.dataEntrega?formatDate(p.dataEntrega):'—'}
       </span>
-      ${p.produtos?`<span class="pedido-meta-item"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>${p.produtos.length>32?p.produtos.slice(0,32)+'…':p.produtos}</span>`:''}
+      ${produtosResumo?`<span class="pedido-meta-item" title="${produtosResumo.replace(/"/g,'&quot;')}"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>${produtosResumo.length>32?produtosResumo.slice(0,32)+'…':produtosResumo}${qtdTotalItens>0?` <b style="color:var(--text-mid)">(${qtdTotalItens} un.)</b>`:''}</span>`:''}
       <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        ${p.total>0?`<span class="pedido-meta-item" style="font-weight:700;color:var(--blue-dark)">${fmtM(p.total)}</span>`:''}
         ${pend>0?`<span class="tag-pendente" style="margin-left:0">${fmtM(pend)} pendente</span>`:''}
         ${wa?`<button class="btn-icon-wa" onclick="event.stopPropagation();window.open('${wa}','_blank')" title="WhatsApp">
           <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
@@ -2192,6 +2204,36 @@ function renderCustoRealPedido(p){
     </div>`;
 }
 
+// Tabela detalhada dos itens do pedido: quantidade, valor unitário e subtotal de cada produto
+function renderItensDetalhePedido(p) {
+  if (!p.itens || !p.itens.length) return '';
+  const totalItens = p.itens.reduce((s,i)=>s+(i.precoUnit||0)*(i.qtd||0),0);
+  const qtdTotal    = p.itens.reduce((s,i)=>s+(i.qtd||0),0);
+  const divergente  = (p.total||0) > 0 && Math.abs((p.total||0) - totalItens) > 0.01;
+  return `
+    <div class="card" style="margin-top:14px">
+      <div class="card-label">Itens do pedido</div>
+      <div style="display:flex;font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--text-soft);padding-bottom:8px;border-bottom:1px solid var(--border-light)">
+        <span style="flex:1">Produto</span>
+        <span style="width:44px;text-align:center">Qtd</span>
+        <span style="width:74px;text-align:right">Unitário</span>
+        <span style="width:74px;text-align:right">Subtotal</span>
+      </div>
+      ${p.itens.map(i=>`
+        <div style="display:flex;align-items:center;font-size:13px;padding:9px 0;border-bottom:1px solid var(--border-light)">
+          <span style="flex:1;color:var(--text)">${i.produtoNome}</span>
+          <span style="width:44px;text-align:center;color:var(--text-mid)">${i.qtd}</span>
+          <span style="width:74px;text-align:right;color:var(--text-mid)">${fmtM(i.precoUnit)}</span>
+          <span style="width:74px;text-align:right;font-weight:600;color:var(--text)">${fmtM((i.precoUnit||0)*(i.qtd||0))}</span>
+        </div>`).join('')}
+      <div style="display:flex;align-items:center;padding-top:10px">
+        <span style="flex:1;font-size:12px;color:var(--text-soft)">${qtdTotal} item${qtdTotal===1?'':'ns'} no total</span>
+        <span style="font-size:15px;font-weight:700;color:var(--blue-dark)">${fmtM(totalItens)}</span>
+      </div>
+      ${divergente?`<div style="margin-top:10px;padding:8px 10px;background:var(--rose-pale);border:1px solid var(--rose-light);border-radius:8px;font-size:11px;color:var(--rose-dark)">⚠️ O valor total do pedido (${fmtM(p.total)}) é diferente da soma dos itens (${fmtM(totalItens)}).</div>`:''}
+    </div>`;
+}
+
 function openDetail(id) {
   const p = load(K.P).find(p=>p.id===id);
   if (!p) return;
@@ -2212,6 +2254,7 @@ function openDetail(id) {
     </span></div>
     ${p.dataEvento?`<div class="detail-row"><span class="detail-key">Data do evento</span><span class="detail-val">${formatDate(p.dataEvento)}</span></div>`:''}
     <div class="detail-row"><span class="detail-key">Produtos</span><span class="detail-val">${p.produtos||'—'}</span></div>
+    ${renderItensDetalhePedido(p)}
     <div class="detail-row"><span class="detail-key">Valor total</span><span class="detail-val">${fmtM(p.total)}</span></div>
     <div class="detail-row"><span class="detail-key">Valor pago</span><span class="detail-val" style="color:var(--success)">${fmtM(p.pago)}</span></div>
     <div class="detail-row"><span class="detail-key">Pendente</span><span class="detail-val" style="color:${pend>0?'var(--danger)':'var(--success)'}">${fmtM(pend)}</span></div>
