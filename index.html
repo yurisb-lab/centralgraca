@@ -1045,6 +1045,13 @@ select.form-control {
           </div>
           <span class="cfg-arrow">›</span>
         </div>
+        <div class="cfg-row" onclick="showApiKeyConfig()">
+          <div class="cfg-left">
+            <div class="cfg-icon"><svg viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></div>
+            <div><div class="cfg-text">Importar pedidos com IA</div><div class="cfg-sub">Chave da API do Google Gemini</div></div>
+          </div>
+          <span class="cfg-arrow">›</span>
+        </div>
         <div class="cfg-row" onclick="testNotification()">
           <div class="cfg-left">
             <div class="cfg-icon"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
@@ -1150,6 +1157,9 @@ select.form-control {
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title" id="modal-pedido-title">Novo pedido</div>
+    <button class="btn btn-ghost btn-sm" style="width:100%;margin-bottom:16px" onclick="openImportarConversaModal()">
+      📋 Importar dados de uma conversa
+    </button>
     <input type="hidden" id="pedido-id">
     <input type="hidden" id="p-cliente-id">
     <div class="form-group">
@@ -1424,9 +1434,16 @@ select.form-control {
     <div class="modal-title">Venda avulsa</div>
     <input type="hidden" id="venda-id">
     <div class="form-group"><label class="form-label">Cliente</label><input type="text" class="form-control" id="v-cliente" placeholder="Nome do cliente"></div>
-    <div class="form-group"><label class="form-label">Produto *</label><input type="text" class="form-control" id="v-produto" placeholder="Ex: Bolo no palito"></div>
+    <div class="form-group">
+      <label class="form-label">Produto *</label>
+      <select class="form-control" id="v-produto-select" onchange="onVendaProdutoChange()"></select>
+    </div>
+    <div class="form-group" id="v-produto-manual-wrap" style="display:none">
+      <label class="form-label">Nome do produto</label>
+      <input type="text" class="form-control" id="v-produto-manual" placeholder="Ex: Bolo no palito">
+    </div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">Quantidade</label><input type="number" class="form-control" id="v-qtd" placeholder="1"></div>
+      <div class="form-group"><label class="form-label">Quantidade</label><input type="number" class="form-control" id="v-qtd" placeholder="1" oninput="onVendaProdutoChange()"></div>
       <div class="form-group"><label class="form-label">Valor (R$)</label><input type="number" class="form-control" id="v-valor" placeholder="0,00"></div>
     </div>
     <div class="form-group"><label class="form-label">Data *</label><input type="date" class="form-control" id="v-data"></div>
@@ -1450,7 +1467,7 @@ select.form-control {
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Categoria</label>
-        <input type="text" class="form-control" id="pr-categoria" placeholder="Ex: Fotos">
+        <select class="form-control" id="pr-categoria" onchange="onCategoriaSelectChange(this)"></select>
       </div>
       <div class="form-group">
         <label class="form-label">Status</label>
@@ -1527,6 +1544,11 @@ select.form-control {
         <label class="form-label">Estoque mínimo (alerta)</label>
         <input type="number" class="form-control" id="mat-estoque-min" placeholder="0" step="0.01">
       </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Link do produto (opcional)</label>
+      <input type="url" class="form-control" id="mat-link" placeholder="Ex: https://loja.com/produto">
+      <div style="font-size:11px;color:var(--text-soft);margin-top:6px">Cole o link da loja onde você compra este material, para achar mais fácil na próxima vez.</div>
     </div>
     <div id="mat-historico"></div>
     <div class="modal-footer">
@@ -1606,6 +1628,22 @@ select.form-control {
   </div>
 </div>
 
+<!-- CADASTRO RÁPIDO DE CATEGORIA -->
+<div class="modal-overlay" id="modal-categoria-quick">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Nova categoria</div>
+    <div class="form-group">
+      <label class="form-label">Nome da categoria *</label>
+      <input type="text" class="form-control" id="catq-nome" placeholder="Ex: Fotos">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-categoria-quick')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveCategoriaQuick()">Cadastrar e usar</button>
+    </div>
+  </div>
+</div>
+
 <!-- CONCLUIR PEDIDO / LANÇAR RECEITA -->
 <div class="modal-overlay" id="modal-concluir">
   <div class="modal">
@@ -1629,6 +1667,24 @@ select.form-control {
       <label class="form-label">Data do recebimento</label>
       <input type="date" class="form-control" id="concluir-data">
     </div>
+
+    <div class="form-group">
+      <label class="form-label">Material desperdiçado (opcional)</label>
+      <div id="concluir-desperdicio-list" style="margin-bottom:10px"></div>
+      <div class="form-row" style="align-items:flex-end">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Material</label>
+          <select class="form-control" id="concluir-desp-mat"></select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Qtd. perdida</label>
+          <input type="number" class="form-control" id="concluir-desp-qtd" placeholder="0" step="0.01">
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%" onclick="addDesperdicioItem()">+ Adicionar desperdício</button>
+      <div style="font-size:11px;color:var(--text-soft);margin-top:6px">Isso aumenta o custo do pedido e é retirado do estoque.</div>
+    </div>
+
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="concluirSemReceita()">Só concluir</button>
       <button class="btn btn-success" onclick="concluirComReceita()">
@@ -1675,6 +1731,98 @@ select.form-control {
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-meta')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveMeta()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHAVE DA API GEMINI -->
+<div class="modal-overlay" id="modal-apikey">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Importar pedidos com IA</div>
+    <p style="font-size:12px;color:var(--text-mid);line-height:1.65;margin:-14px 0 18px">
+      Cole aqui a chave da API do Google Gemini para poder importar pedidos automaticamente a partir de uma conversa do WhatsApp.
+      Você pode gerar uma chave gratuita em <strong>aistudio.google.com/apikey</strong>.
+    </p>
+    <div class="form-group">
+      <label class="form-label">Chave da API</label>
+      <input type="password" class="form-control" id="apikey-valor" placeholder="AIza...">
+    </div>
+    <div style="font-size:11px;color:var(--text-soft);line-height:1.6;background:var(--blue-pale);border-radius:var(--r-sm);padding:10px 12px">
+      ⚠️ Por segurança, restrinja esta chave por domínio e defina um limite de uso diário no Google Cloud Console, já que ela fica salva neste dispositivo/conta.
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-apikey')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveApiKey()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORTAR PEDIDO DE UMA CONVERSA -->
+<div class="modal-overlay" id="modal-importar-conversa">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Importar dados de uma conversa</div>
+
+    <div id="imp-passo-colar">
+      <p style="font-size:12px;color:var(--text-mid);line-height:1.6;margin:-14px 0 16px">
+        Cole abaixo a conversa do WhatsApp com o cliente (pode copiar e colar as mensagens direto do app). A IA vai tentar identificar os dados do pedido.
+      </p>
+      <div class="form-group">
+        <textarea class="form-control" id="imp-conversa-texto" rows="10" placeholder="Cole aqui a conversa...&#10;&#10;Ex:&#10;Oi, queria encomendar um bolo para o aniversário da minha filha&#10;Pode ser dia 15/08, uns 20 doces também&#10;Fica quanto?&#10;R: Fica R$180, sendo R$80 de sinal"></textarea>
+      </div>
+      <div id="imp-loading" style="display:none;text-align:center;padding:14px;font-size:13px;color:var(--blue-dark)">⏳ Lendo a conversa e extraindo os dados...</div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('modal-importar-conversa')">Cancelar</button>
+        <button class="btn btn-primary" id="imp-extrair-btn" onclick="extrairPedidoDaConversa()">🔎 Extrair dados</button>
+      </div>
+    </div>
+
+    <div id="imp-passo-revisao" style="display:none">
+      <div id="imp-cliente-match" style="margin-bottom:16px"></div>
+
+      <div class="form-group">
+        <label class="form-label">Nome do cliente</label>
+        <input type="text" class="form-control" id="imp-nome">
+      </div>
+      <div class="form-group">
+        <label class="form-label">WhatsApp</label>
+        <input type="tel" class="form-control" id="imp-whatsapp">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Produtos combinados</label>
+        <input type="text" class="form-control" id="imp-produtos">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Valor total (R$)</label>
+          <input type="number" class="form-control" id="imp-valor-total" step="0.01">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Valor pago / sinal (R$)</label>
+          <input type="number" class="form-control" id="imp-valor-pago" step="0.01">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Data do evento</label>
+          <input type="date" class="form-control" id="imp-data-evento">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Data de entrega</label>
+          <input type="date" class="form-control" id="imp-data-entrega">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Observações</label>
+        <textarea class="form-control" id="imp-obs" rows="3"></textarea>
+      </div>
+      <div style="font-size:11px;color:var(--text-soft);margin:-6px 0 4px">Confira os dados acima — a IA pode errar. Ajuste o que precisar antes de aplicar ao pedido.</div>
+
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="voltarImportarConversa()">‹ Colar outra conversa</button>
+        <button class="btn btn-primary" onclick="aplicarImportacaoAoPedido()">Usar estes dados no pedido</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1763,8 +1911,11 @@ let currentClienteKey = null;
 let currentScreen   = 'dashboard';
 let agendaTab = 'hoje', finTab = 'receitas', vendasTab = 'historico', estoqueTab = 'materiais';
 let calDate = new Date();
+let pedidosMesesExpandido = new Set();     // meses (YYYY-MM) atualmente expandidos na tela de Pedidos
+let pedidosMesesInicializado = new Set();  // controla quais meses já receberam o estado "expandido" padrão
 let composicaoAtual = [];   // materiais do produto sendo editado: {matId, qtd}
 let itensPedidoAtual = [];  // itens de catálogo do pedido sendo editado: {produtoId, produtoNome, qtd, precoUnit}
+let desperdicioAtual = [];  // materiais desperdiçados ao concluir o pedido: {matId, qtd}
 
 /* ── DEMO DATA ───────────────────────────────────── */
 function initDemo() {
@@ -2213,7 +2364,54 @@ function filterPedidos() {
     return ms&&mq;
   }).sort(sortByDate);
   const el = document.getElementById('list-pedidos');
-  el.innerHTML = list.length ? list.map(p=>pedidoCardHTML(p)).join('') : emptyHTML('Nenhum pedido encontrado.<br><strong>Toque no + para adicionar.</strong>');
+  if (!list.length) { el.innerHTML = emptyHTML('Nenhum pedido encontrado.<br><strong>Toque no + para adicionar.</strong>'); return; }
+
+  const porMes = agruparPedidosPorMes(list);
+  const meses = Object.keys(porMes).sort((a,b)=> a==='sem-data' ? 1 : b==='sem-data' ? -1 : a.localeCompare(b));
+  // Na primeira vez que um mês aparece, ele começa expandido (mantém os cards visíveis como antes)
+  meses.forEach(ym=>{ if (!pedidosMesesInicializado.has(ym)) { pedidosMesesExpandido.add(ym); pedidosMesesInicializado.add(ym); } });
+  el.innerHTML = meses.map(ym=>renderPilhaMesPedidos(ym, porMes[ym])).join('');
+}
+
+function agruparPedidosPorMes(lista){
+  const porMes = {};
+  lista.forEach(p=>{
+    const ym = p.dataEntrega ? p.dataEntrega.slice(0,7) : 'sem-data';
+    if (!porMes[ym]) porMes[ym] = [];
+    porMes[ym].push(p);
+  });
+  return porMes;
+}
+
+function mesLabel(ym){
+  const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const [y,m] = ym.split('-');
+  return `${meses[parseInt(m,10)-1]} de ${y}`;
+}
+
+function togglePedidoMes(ym){
+  if (pedidosMesesExpandido.has(ym)) pedidosMesesExpandido.delete(ym);
+  else pedidosMesesExpandido.add(ym);
+  filterPedidos();
+}
+
+function renderPilhaMesPedidos(ym, itens){
+  const isOpen = pedidosMesesExpandido.has(ym);
+  const label = ym === 'sem-data' ? 'Sem data de entrega' : mesLabel(ym);
+  const totalValor = itens.reduce((s,p)=>s+(p.total||0),0);
+  return `
+    <div class="card" style="padding:0;margin-bottom:12px;overflow:hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer" onclick="togglePedidoMes('${ym}')">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span style="font-family:var(--font-display);font-size:17px;font-weight:600">${isOpen?'▾':'▸'} ${label}</span>
+          <span style="font-size:12px;color:var(--text-soft)">${itens.length} pedido${itens.length===1?'':'s'}${totalValor>0?' · '+fmtM(totalValor):''}</span>
+        </div>
+        <span style="font-size:12px;color:var(--text-soft);flex-shrink:0">${isOpen?'recolher':'expandir'}</span>
+      </div>
+      ${isOpen?`<div style="border-top:1px solid var(--border-light);padding:12px 14px 4px">
+        ${itens.map(p=>pedidoCardHTML(p)).join('')}
+      </div>`:''}
+    </div>`;
 }
 
 function setChip(el, gid) {
@@ -2295,7 +2493,19 @@ function renderCustoRealPedido(p){
       <div class="meta-row"><span>Lucro bruto real</span><b style="color:${lucroBruto>=0?'var(--success)':'var(--danger)'}">${fmtM(lucroBruto)}</b></div>
       <div class="meta-row"><span>Margem de lucro</span><b style="color:${margem>=0?'var(--success)':'var(--danger)'}">${margem.toFixed(1)}%</b></div>
       ${detalhes.length?`<div style="font-size:11px;color:var(--text-soft);margin-top:8px">Insumos: ${detalhes.map(d=>`${d.nome} (${d.qtd} ${d.unidade})`).join(', ')}</div>`:''}
+      ${renderDesperdicioDetalhe(p)}
     </div>`;
+}
+
+// Mostra o material perdido/desperdiçado registrado ao concluir o pedido, se houver
+function renderDesperdicioDetalhe(p){
+  if (!p.materialDesperdicado || !p.materialDesperdicado.length) return '';
+  const mats = load(K.M);
+  const linhas = p.materialDesperdicado.map(d=>{
+    const m = mats.find(x=>x.id===d.matId);
+    return `${m?m.nome:'Material removido'} (${d.qtd} ${m?.unidade||''})`;
+  }).join(', ');
+  return `<div style="font-size:11px;color:var(--danger);margin-top:8px">🗑️ Desperdício registrado: ${linhas}</div>`;
 }
 
 // Tabela detalhada dos itens do pedido: quantidade, valor unitário e subtotal de cada produto
@@ -2382,14 +2592,70 @@ function concluirPedido() {
   document.getElementById('concluir-valor-preview').textContent = fmtM(valorSugerido);
   document.getElementById('concluir-cliente-preview').textContent = p.nome + (p.produtos ? ' · ' + p.produtos.slice(0,40) : '');
   document.getElementById('concluir-data').value = todayStr();
+  desperdicioAtual = [];
+  populateMaterialSelectDesperdicio();
+  renderDesperdicioList();
   closeModal('modal-detalhe');
   openModal('modal-concluir');
+}
+
+function populateMaterialSelectDesperdicio(){
+  const mats = load(K.M);
+  const sel = document.getElementById('concluir-desp-mat');
+  sel.innerHTML = mats.length
+    ? mats.map(m=>`<option value="${m.id}">${m.nome} (${fmtM(m.custo)}/${m.unidade||'un'})</option>`).join('')
+    : '<option value="">Nenhum material cadastrado</option>';
+}
+
+function addDesperdicioItem(){
+  const matId = document.getElementById('concluir-desp-mat').value;
+  const qtd   = parseFloat(document.getElementById('concluir-desp-qtd').value);
+  if (!matId){ showToast('Cadastre um material primeiro'); return; }
+  if (!qtd || qtd<=0){ showToast('Informe a quantidade perdida'); return; }
+  const idx = desperdicioAtual.findIndex(d=>d.matId===matId);
+  if (idx>=0) desperdicioAtual[idx].qtd += qtd; else desperdicioAtual.push({ matId, qtd });
+  document.getElementById('concluir-desp-qtd').value = '';
+  renderDesperdicioList();
+}
+function removeDesperdicioItem(i){ desperdicioAtual.splice(i,1); renderDesperdicioList(); }
+
+function renderDesperdicioList(){
+  const mats = load(K.M);
+  const el = document.getElementById('concluir-desperdicio-list');
+  el.innerHTML = desperdicioAtual.length ? desperdicioAtual.map((d,i)=>{
+    const m = mats.find(x=>x.id===d.matId);
+    return `<div class="tx-row" style="padding:8px 0">
+      <div class="tx-left"><div style="font-size:13px">${m?m.nome:'Material removido'} — ${d.qtd} ${m?.unidade||''}</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:12px;color:var(--danger)">${fmtM(m?m.custo*d.qtd:0)}</span>
+        <button class="btn btn-ghost btn-sm" onclick="removeDesperdicioItem(${i})">Remover</button>
+      </div>
+    </div>`;
+  }).join('') : '<div style="font-size:12px;color:var(--text-soft)">Nenhum desperdício adicionado.</div>';
 }
 
 function _finalizarPedido(valorRecebidoAgora) {
   const ps = load(K.P);
   const idx = ps.findIndex(p => p.id === currentDetailId);
   if (idx >= 0) {
+    // Aplica material desperdiçado: retira do estoque e soma ao custo do pedido
+    if (desperdicioAtual.length) {
+      const mats = load(K.M);
+      let custoDesperdicio = 0;
+      desperdicioAtual.forEach(d => {
+        const mi = mats.findIndex(m => m.id === d.matId);
+        if (mi >= 0) {
+          mats[mi].estoque = (mats[mi].estoque || 0) - d.qtd;
+          custoDesperdicio += (mats[mi].custo || 0) * d.qtd;
+          logMovimentoEstoque(d.matId, 'saida', d.qtd, mats[mi].custo, 'Desperdício em pedido');
+        }
+      });
+      save(K.M, mats);
+      ps[idx].custosExtras = (ps[idx].custosExtras || 0) + custoDesperdicio;
+      ps[idx].materialDesperdicado = (ps[idx].materialDesperdicado || []).concat(desperdicioAtual);
+      const descAtual = ps[idx].custosExtrasDesc || '';
+      ps[idx].custosExtrasDesc = descAtual ? descAtual + ' + desperdício' : 'Desperdício de materiais';
+    }
     const total = ps[idx].total || 0;
     // Só soma ao valor pago o que foi de fato lançado agora (não força quitação total)
     if (valorRecebidoAgora) {
@@ -2401,6 +2667,7 @@ function _finalizarPedido(valorRecebidoAgora) {
     save(K.P, ps);
   }
   currentDetailId = null;
+  desperdicioAtual = [];
   closeModal('modal-concluir');
   if (currentScreen === 'pedidos') filterPedidos();
   else renderDashboard();
@@ -2924,6 +3191,183 @@ function savePedido() {
   showToast('Pedido salvo.');
 }
 
+/* ── IMPORTAR PEDIDO DE UMA CONVERSA (IA - Google Gemini) ────────── */
+let _importCliMatch = null; // cliente encontrado na última extração, se houver
+
+function openImportarConversaModal(){
+  document.getElementById('imp-conversa-texto').value = '';
+  document.getElementById('imp-passo-colar').style.display = 'block';
+  document.getElementById('imp-passo-revisao').style.display = 'none';
+  document.getElementById('imp-loading').style.display = 'none';
+  _importCliMatch = null;
+  openModal('modal-importar-conversa');
+  setTimeout(()=>document.getElementById('imp-conversa-texto')?.focus(), 250);
+}
+
+function voltarImportarConversa(){
+  document.getElementById('imp-passo-colar').style.display = 'block';
+  document.getElementById('imp-passo-revisao').style.display = 'none';
+}
+
+// Tenta casar o nome/whatsapp extraído da conversa com um cliente já cadastrado
+function encontrarClienteMatch(nome, whatsapp){
+  const cs = load(K.CLI);
+  if (!cs.length) return null;
+  if (whatsapp) {
+    const d = whatsapp.replace(/\D/g,'');
+    if (d.length >= 8) {
+      const alvo = d.slice(-8); // últimos 8 dígitos, evita divergência de DDI/DDD
+      const m = cs.find(c => c.whatsapp && c.whatsapp.replace(/\D/g,'').slice(-8) === alvo);
+      if (m) return m;
+    }
+  }
+  if (nome) {
+    const n = nome.trim().toLowerCase();
+    if (n) {
+      const exato = cs.find(c => (c.nome||'').trim().toLowerCase() === n);
+      if (exato) return exato;
+      const parcial = cs.find(c => {
+        const cn = (c.nome||'').trim().toLowerCase();
+        return cn && (cn.includes(n) || n.includes(cn));
+      });
+      if (parcial) return parcial;
+    }
+  }
+  return null;
+}
+
+async function extrairPedidoDaConversa(){
+  const texto = document.getElementById('imp-conversa-texto').value.trim();
+  if (!texto){ showToast('Cole a conversa primeiro'); return; }
+
+  appConfig = loadO(K.C);
+  const apiKey = appConfig.geminiApiKey;
+  if (!apiKey){
+    showToast('Configure a chave da API do Gemini em Configurações primeiro.');
+    closeModal('modal-importar-conversa');
+    showApiKeyConfig();
+    return;
+  }
+
+  document.getElementById('imp-loading').style.display = 'block';
+  document.getElementById('imp-extrair-btn').disabled = true;
+
+  const hoje = todayStr();
+  const prompt = `Você lê conversas de WhatsApp entre uma confeiteira/papelaria personalizada ("Graça em Papel") e seus clientes, e extrai os dados do pedido combinado.
+
+Data de hoje: ${hoje} (use isso para resolver datas relativas como "dia 15", "próxima sexta", "semana que vem" etc — assuma a próxima ocorrência futura dessa data).
+
+Responda APENAS com um JSON válido (sem markdown, sem texto extra) no seguinte formato:
+{
+  "nome": "nome do cliente, ou null se não identificado",
+  "whatsapp": "telefone do cliente se aparecer na conversa, apenas números, ou null",
+  "produtos": "resumo curto dos produtos/itens combinados, ou null",
+  "valorTotal": número (valor total combinado) ou null,
+  "valorPago": número (valor de sinal/pagamento já recebido, se mencionado) ou null,
+  "dataEvento": "YYYY-MM-DD ou null (data da festa/evento em si, se diferente da entrega)",
+  "dataEntrega": "YYYY-MM-DD ou null (data em que o pedido deve ficar pronto/ser entregue)",
+  "observacoes": "outros detalhes relevantes combinados (cores, tema, quantidade, tamanho etc), ou null"
+}
+
+Conversa:
+"""
+${texto}
+"""`;
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: 'application/json' }
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast('Erro na API: ' + (data?.error?.message || res.status));
+      return;
+    }
+    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!raw) { showToast('A IA não retornou dados. Tente novamente.'); return; }
+    let extraido;
+    try { extraido = JSON.parse(raw); }
+    catch { showToast('Não foi possível interpretar a resposta da IA.'); return; }
+
+    preencherRevisaoImportacao(extraido);
+  } catch(e) {
+    showToast('Erro ao conectar com a IA. Verifique sua chave e conexão.');
+  } finally {
+    document.getElementById('imp-loading').style.display = 'none';
+    document.getElementById('imp-extrair-btn').disabled = false;
+  }
+}
+
+function preencherRevisaoImportacao(ex){
+  document.getElementById('imp-nome').value         = ex.nome || '';
+  document.getElementById('imp-whatsapp').value      = ex.whatsapp || '';
+  document.getElementById('imp-produtos').value      = ex.produtos || '';
+  document.getElementById('imp-valor-total').value   = ex.valorTotal ?? '';
+  document.getElementById('imp-valor-pago').value    = ex.valorPago ?? '';
+  document.getElementById('imp-data-evento').value   = ex.dataEvento || '';
+  document.getElementById('imp-data-entrega').value  = ex.dataEntrega || '';
+  document.getElementById('imp-obs').value           = ex.observacoes || '';
+
+  _importCliMatch = encontrarClienteMatch(ex.nome, ex.whatsapp);
+  const matchEl = document.getElementById('imp-cliente-match');
+  if (_importCliMatch) {
+    matchEl.innerHTML = `
+      <div class="card" style="background:var(--blue-pale);border:none;box-shadow:none;padding:12px 14px;margin:0">
+        <div style="font-size:12px;color:var(--blue-deep);line-height:1.5">
+          ✅ Cliente já cadastrado encontrado: <b>${_importCliMatch.nome}</b>${_importCliMatch.whatsapp?' · '+_importCliMatch.whatsapp:''}<br>
+          Este pedido será vinculado ao cadastro dele.
+        </div>
+      </div>`;
+    // Usa os dados oficiais do cadastro quando disponíveis
+    document.getElementById('imp-nome').value = _importCliMatch.nome || document.getElementById('imp-nome').value;
+    if (_importCliMatch.whatsapp) document.getElementById('imp-whatsapp').value = _importCliMatch.whatsapp;
+  } else {
+    matchEl.innerHTML = `
+      <div class="card" style="background:var(--rose-pale);border-color:var(--rose-light);padding:12px 14px;margin:0">
+        <div style="font-size:12px;color:var(--rose-dark);line-height:1.5">
+          ⚠️ Não encontramos um cliente cadastrado com esse nome/WhatsApp. O pedido será criado sem vínculo — você pode cadastrar o cliente depois em "Clientes".
+        </div>
+      </div>`;
+  }
+
+  document.getElementById('imp-passo-colar').style.display = 'none';
+  document.getElementById('imp-passo-revisao').style.display = 'block';
+}
+
+function aplicarImportacaoAoPedido(){
+  const nome = document.getElementById('imp-nome').value.trim();
+  if (!nome) { showToast('Informe ao menos o nome do cliente'); return; }
+
+  document.getElementById('p-nome').value         = nome;
+  document.getElementById('p-whatsapp').value     = document.getElementById('imp-whatsapp').value.trim();
+  document.getElementById('p-produtos').value     = document.getElementById('imp-produtos').value.trim();
+  const vt = parseFloat(document.getElementById('imp-valor-total').value);
+  const vp = parseFloat(document.getElementById('imp-valor-pago').value);
+  document.getElementById('p-total').value        = isNaN(vt) ? '' : vt;
+  document.getElementById('p-pago').value         = isNaN(vp) ? '' : vp;
+  document.getElementById('p-data-evento').value  = document.getElementById('imp-data-evento').value;
+  document.getElementById('p-data-entrega').value = document.getElementById('imp-data-entrega').value;
+  const obsImportada = document.getElementById('imp-obs').value.trim();
+  if (obsImportada) {
+    const obsAtual = document.getElementById('p-obs').value.trim();
+    document.getElementById('p-obs').value = obsAtual ? obsAtual + '\n' + obsImportada : obsImportada;
+  }
+  calcPendente();
+
+  if (_importCliMatch) {
+    populateClienteSelectPedido(_importCliMatch.id);
+    document.getElementById('p-cliente-id').value = _importCliMatch.id;
+  }
+
+  closeModal('modal-importar-conversa');
+  showToast(_importCliMatch ? 'Dados importados e vinculados ao cliente!' : 'Dados importados. Revise antes de salvar.');
+}
+
 /* ── PRODUTOS (catálogo) ──────────────────────────── */
 function renderProdutosScreen(){
   const el = document.getElementById('produtos-content');
@@ -2997,6 +3441,7 @@ function materialCardHTML(m){
     <div class="pedido-meta">
       <span class="pedido-meta-item">Estoque atual: ${m.estoque||0} ${m.unidade||''}</span>
       <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
+        ${m.link?`<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();window.open('${m.link}','_blank')">🔗 Ver produto</button>`:''}
         <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openEstoqueEntradaModal('${m.id}')">+ Entrada</button>
         <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();deleteMaterial('${m.id}')">Excluir</button>
       </div>
@@ -3007,12 +3452,58 @@ function materialCardHTML(m){
 function openProdutoById(id){ const p = load(K.PR).find(x=>x.id===id); if(p) openProdutoModal(p); }
 function openMaterialById(id){ const m = load(K.M).find(x=>x.id===id); if(m) openMaterialModal(m); }
 
+/* -- Categorias de produto (lista editável, evita categorias soltas/duplicadas) -- */
+function getCategoriasProdutos(){
+  appConfig = loadO(K.C);
+  let cats = appConfig.categoriasProdutos;
+  if (!cats || !cats.length) cats = ['Fotos','Convites','Lembrancinhas','Decoração','Papelaria','Outros'];
+  // Traz para a lista categorias antigas já usadas em produtos (cadastro livre anterior)
+  const usadas = [...new Set(load(K.PR).map(p=>p.categoria).filter(Boolean))];
+  usadas.forEach(c=>{ if (!cats.includes(c)) cats.push(c); });
+  return cats;
+}
+
+function populateCategoriaSelect(selected){
+  const cats = getCategoriasProdutos();
+  const sel = document.getElementById('pr-categoria');
+  sel.innerHTML = cats.map(c=>`<option value="${c}">${c}</option>`).join('')
+    + '<option value="__new__">➕ Adicionar nova categoria...</option>';
+  sel.value = selected && cats.includes(selected) ? selected : (cats[0] || '');
+}
+
+function onCategoriaSelectChange(sel){
+  if (sel.value === '__new__'){
+    const primeiraValida = Array.from(sel.options).find(o=>o.value && o.value !== '__new__');
+    sel.value = primeiraValida ? primeiraValida.value : '';
+    openCategoriaQuick();
+  }
+}
+
+function openCategoriaQuick(){
+  document.getElementById('catq-nome').value = '';
+  openModal('modal-categoria-quick');
+  setTimeout(()=>document.getElementById('catq-nome')?.focus(), 250);
+}
+
+function saveCategoriaQuick(){
+  const nome = document.getElementById('catq-nome').value.trim();
+  if (!nome){ showToast('Informe o nome da categoria'); return; }
+  appConfig = loadO(K.C);
+  const cats = getCategoriasProdutos();
+  if (!cats.includes(nome)) cats.push(nome);
+  appConfig.categoriasProdutos = cats;
+  save(K.C, appConfig);
+  closeModal('modal-categoria-quick');
+  populateCategoriaSelect(nome);
+  showToast('Categoria cadastrada! Já selecionada.');
+}
+
 /* -- Produto: modal e composição -- */
 function openProdutoModal(p=null){
   document.getElementById('modal-produto-title').textContent = p ? 'Editar produto' : 'Novo produto';
   document.getElementById('pr-id').value        = p?.id || '';
   document.getElementById('pr-nome').value      = p?.nome || '';
-  document.getElementById('pr-categoria').value = p?.categoria || '';
+  populateCategoriaSelect(p?.categoria);
   document.getElementById('pr-status').value    = p?.status || 'Ativo';
   document.getElementById('pr-desc').value      = p?.descricao || '';
   document.getElementById('pr-preco').value     = p?.preco || '';
@@ -3112,6 +3603,7 @@ function openMaterialModal(m=null){
   document.getElementById('mat-custo').value        = m?.custo ?? '';
   document.getElementById('mat-estoque').value      = m?.estoque ?? '';
   document.getElementById('mat-estoque-min').value  = m?.estoqueMin ?? '';
+  document.getElementById('mat-link').value         = m?.link || '';
   renderMatHistorico(m?.id);
   openModal('modal-material');
 }
@@ -3157,7 +3649,8 @@ function saveMaterial(){
     unidade: document.getElementById('mat-unidade').value,
     custo,
     estoque:    parseFloat(document.getElementById('mat-estoque').value)||0,
-    estoqueMin: parseFloat(document.getElementById('mat-estoque-min').value)||0
+    estoqueMin: parseFloat(document.getElementById('mat-estoque-min').value)||0,
+    link:       document.getElementById('mat-link').value.trim()
   };
   const ms = load(K.M);
   const idx = ms.findIndex(x=>x.id===id);
@@ -3792,14 +4285,43 @@ function renderVendasContent(tab){
 }
 
 function openVendaModal(){
-  ['venda-id','v-cliente','v-produto','v-qtd','v-valor'].forEach(id=>document.getElementById(id).value='');
+  ['venda-id','v-cliente','v-produto-manual','v-valor'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('v-data').value=todayStr();
   document.getElementById('v-qtd').value=1;
+  populateProdutoSelectVenda();
   openModal('modal-venda');
 }
 
+function populateProdutoSelectVenda(selectedId){
+  const prods = load(K.PR).filter(p=>p.status!=='Inativo');
+  const sel = document.getElementById('v-produto-select');
+  sel.innerHTML = (prods.length ? prods.map(p=>`<option value="${p.id}">${p.nome} (${fmtM(p.preco)})</option>`).join('') : '')
+    + '<option value="__manual__">✏️ Outro (digitar manualmente)</option>';
+  sel.value = selectedId || (prods.length ? prods[0].id : '__manual__');
+  onVendaProdutoChange();
+}
+
+function onVendaProdutoChange(){
+  const sel = document.getElementById('v-produto-select');
+  const manualWrap = document.getElementById('v-produto-manual-wrap');
+  if (!sel) return;
+  if (sel.value === '__manual__'){
+    manualWrap.style.display = 'block';
+  } else {
+    manualWrap.style.display = 'none';
+    const prod = load(K.PR).find(p=>p.id===sel.value);
+    if (prod){
+      const qtd = parseFloat(document.getElementById('v-qtd').value)||1;
+      document.getElementById('v-valor').value = (prod.preco*qtd).toFixed(2);
+    }
+  }
+}
+
 function saveVenda(){
-  const prod=document.getElementById('v-produto').value.trim();
+  const sel = document.getElementById('v-produto-select');
+  let prod = '';
+  if (sel.value === '__manual__') prod = document.getElementById('v-produto-manual').value.trim();
+  else { const p = load(K.PR).find(x=>x.id===sel.value); prod = p ? p.nome : ''; }
   if(!prod){showToast('Informe o produto');return;}
   const vs=load(K.V);
   vs.push({id:'v'+Date.now(),cliente:document.getElementById('v-cliente').value,produto:prod,qtd:parseInt(document.getElementById('v-qtd').value)||1,valor:parseFloat(document.getElementById('v-valor').value)||0,data:document.getElementById('v-data').value});
@@ -3854,6 +4376,21 @@ function savePerfil(){
   closeModal('modal-perfil');
   showToast('Senha atualizada com sucesso!');
 }
+
+/* ── CHAVE DA API GEMINI ─────────────────────────── */
+function showApiKeyConfig(){
+  appConfig = loadO(K.C);
+  document.getElementById('apikey-valor').value = appConfig.geminiApiKey || '';
+  openModal('modal-apikey');
+}
+function saveApiKey(){
+  appConfig = loadO(K.C);
+  appConfig.geminiApiKey = document.getElementById('apikey-valor').value.trim();
+  save(K.C, appConfig);
+  closeModal('modal-apikey');
+  showToast('Chave da API salva.');
+}
+
 function testNotification(){
   if(!('Notification'in window)){showToast('Notificações não suportadas');return;}
   Notification.requestPermission().then(p=>{
