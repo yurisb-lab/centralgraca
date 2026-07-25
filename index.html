@@ -730,6 +730,49 @@ select.form-control {
   100%{ opacity:0; }
 }
 
+/* ── ASSISTENTE (chat) ───────────────────────────── */
+.assist-chat {
+  display: flex; flex-direction: column; gap: 12px;
+  margin-bottom: 14px;
+}
+.assist-msg {
+  max-width: 86%;
+  padding: 11px 15px;
+  border-radius: var(--r-md);
+  font-size: 13.5px; line-height: 1.55;
+  white-space: pre-wrap;
+}
+.assist-msg.user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, var(--blue-dark), var(--rose));
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+.assist-msg.bot {
+  align-self: flex-start;
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  color: var(--text);
+  box-shadow: var(--shadow-xs);
+  border-bottom-left-radius: 4px;
+}
+.assist-input-wrap {
+  display: flex; align-items: flex-end; gap: 8px;
+  position: sticky; bottom: 6px;
+  background: var(--cream);
+  padding-top: 4px;
+}
+.assist-input-wrap textarea {
+  resize: none; max-height: 120px; min-height: 44px;
+}
+.assist-insight-card {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-radius: var(--r-sm);
+  font-size: 12.5px; color: var(--text-mid);
+  background: var(--surface); border: 1px solid var(--border-light);
+  margin-bottom: 8px; cursor: pointer;
+}
+
 /* ── EMPTY STATE ─────────────────────────────────── */
 .empty {
   text-align: center; padding: 44px 16px;
@@ -1042,6 +1085,28 @@ select.form-control {
       <div id="list-ia"></div>
     </div>
 
+    <!-- ASSISTENTE (chat com IA sobre todo o negócio) -->
+    <div class="screen" id="screen-assistente">
+      <div id="assist-insights"></div>
+      <div class="chips" id="assist-chips" style="margin-bottom:12px">
+        <div class="chip" onclick="perguntarRapido('Quais pedidos estão atrasados?')">Pedidos atrasados</div>
+        <div class="chip" onclick="perguntarRapido('Quanto já faturei este mês?')">Faturamento do mês</div>
+        <div class="chip" onclick="perguntarRapido('Qual material está com estoque baixo?')">Estoque baixo</div>
+        <div class="chip" onclick="perguntarRapido('Quem são meus clientes mais fiéis?')">Clientes fiéis</div>
+        <div class="chip" onclick="perguntarRapido('Estou perto de bater minha meta do mês?')">Meta do mês</div>
+        <div class="chip" onclick="perguntarRapido('Quanto tenho a receber no total?')">A receber</div>
+      </div>
+      <div id="assist-chat" class="assist-chat"></div>
+      <div id="assist-loading" style="display:none;text-align:center;padding:10px;font-size:13px;color:var(--blue-dark)">⏳ Pensando...</div>
+      <div class="assist-input-wrap">
+        <textarea class="form-control" id="assist-input" rows="1" placeholder="Pergunte sobre pedidos, clientes, estoque, financeiro..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();enviarPerguntaAssistente();}"></textarea>
+        <button class="btn btn-primary btn-icon" onclick="enviarPerguntaAssistente()" aria-label="Enviar">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+      <div style="font-size:11px;color:var(--text-soft);text-align:center;margin-top:8px">💬 Respostas usam sua chave de API do Gemini e consideram apenas dados do seu negócio.</div>
+    </div>
+
     <!-- CONFIG -->
     <div class="screen" id="screen-config">
       <div class="card">
@@ -1161,6 +1226,10 @@ select.form-control {
   <button class="nav-item" data-screen="ia" onclick="navigate('ia')">
     <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
     <span>Área IA</span>
+  </button>
+  <button class="nav-item" data-screen="assistente" onclick="navigate('assistente')">
+    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <span>Assistente</span>
   </button>
   <button class="nav-item" data-screen="config" onclick="navigate('config')">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -1560,8 +1629,22 @@ select.form-control {
       </div>
       <div class="form-group">
         <label class="form-label">Custo unitário (R$) *</label>
-        <input type="number" class="form-control" id="mat-custo" placeholder="0,00" step="0.01">
+        <input type="number" class="form-control" id="mat-custo" placeholder="0,00" step="0.0001">
       </div>
+    </div>
+    <div style="background:var(--blue-pale);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:18px">
+      <div style="font-size:11px;font-weight:700;color:var(--blue-deep);margin-bottom:8px">🧮 Comprou em pacote? Calcule o custo por unidade</div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label" style="font-size:10px">Preço do pacote (R$)</label>
+          <input type="number" class="form-control" id="mat-pacote-valor" placeholder="Ex: 15,00" step="0.01">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label" style="font-size:10px">Unidades no pacote</label>
+          <input type="number" class="form-control" id="mat-pacote-qtd" placeholder="Ex: 50" step="1">
+        </div>
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm" style="width:100%;margin-top:8px" onclick="calcularCustoPacote('mat')">Calcular e preencher custo unitário</button>
     </div>
     <div class="form-row">
       <div class="form-group">
@@ -1598,12 +1681,18 @@ select.form-control {
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">Quantidade comprada *</label>
-        <input type="number" class="form-control" id="ee-qtd" placeholder="0" step="0.01" oninput="updateEeTotalPreview()">
+        <input type="number" class="form-control" id="ee-qtd" placeholder="0" step="0.01" oninput="onEeQtdOuValorChange()">
       </div>
       <div class="form-group">
         <label class="form-label">Custo unitário (R$) *</label>
-        <input type="number" class="form-control" id="ee-custo" placeholder="0,00" step="0.01" oninput="updateEeTotalPreview()">
+        <input type="number" class="form-control" id="ee-custo" placeholder="0,00" step="0.0001" oninput="updateEeTotalPreview()">
       </div>
+    </div>
+    <div style="background:var(--blue-pale);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:18px">
+      <div style="font-size:11px;font-weight:700;color:var(--blue-deep);margin-bottom:8px">🧮 Comprou em pacote? Informe o valor total pago que o custo por unidade é calculado sozinho</div>
+      <label class="form-label" style="font-size:10px">Valor total pago nesta compra (R$)</label>
+      <input type="number" class="form-control" id="ee-valor-total" placeholder="Ex: 15,00 (pacote com 50 unidades acima)" step="0.01" oninput="onEeQtdOuValorChange()">
+      <div style="font-size:11px;color:var(--text-soft);margin-top:6px" id="ee-calc-preview"></div>
     </div>
     <div class="form-group">
       <label class="form-label">Data da compra</label>
@@ -1642,8 +1731,22 @@ select.form-control {
       </div>
       <div class="form-group">
         <label class="form-label">Custo unitário (R$) *</label>
-        <input type="number" class="form-control" id="mq-custo" placeholder="0,00" step="0.01">
+        <input type="number" class="form-control" id="mq-custo" placeholder="0,00" step="0.0001">
       </div>
+    </div>
+    <div style="background:var(--blue-pale);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:18px">
+      <div style="font-size:11px;font-weight:700;color:var(--blue-deep);margin-bottom:8px">🧮 Comprou em pacote? Calcule o custo por unidade</div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label" style="font-size:10px">Preço do pacote (R$)</label>
+          <input type="number" class="form-control" id="mq-pacote-valor" placeholder="Ex: 15,00" step="0.01">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label" style="font-size:10px">Unidades no pacote</label>
+          <input type="number" class="form-control" id="mq-pacote-qtd" placeholder="Ex: 50" step="1">
+        </div>
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm" style="width:100%;margin-top:8px" onclick="calcularCustoPacote('mq')">Calcular e preencher custo unitário</button>
     </div>
     <div class="form-group">
       <label class="form-label">Estoque inicial (opcional)</label>
@@ -2060,7 +2163,7 @@ function showForgot() {
 }
 
 /* ── NAVIGATION ──────────────────────────────────── */
-const screenTitles = { dashboard:null, pedidos:'Pedidos', agenda:'Agenda', financeiro:'Financeiro', vendas:'Vendas', produtos:'Produtos', estoque:'Estoque', clientes:'Clientes', ia:'Área IA', config:'Configurações' };
+const screenTitles = { dashboard:null, pedidos:'Pedidos', agenda:'Agenda', financeiro:'Financeiro', vendas:'Vendas', produtos:'Produtos', estoque:'Estoque', clientes:'Clientes', ia:'Área IA', assistente:'Assistente', config:'Configurações' };
 
 function navigate(s, param) {
   currentScreen = s;
@@ -2093,6 +2196,7 @@ function navigate(s, param) {
   if (s==='estoque')     renderEstoqueScreen();
   if (s==='clientes')    renderClientes();
   if (s==='ia')          renderIaScreen();
+  if (s==='assistente')  renderAssistenteScreen();
 
   closeSideNav(); // no-op visually on desktop (side-nav stays fixed open via CSS)
 }
@@ -3317,6 +3421,188 @@ Responda APENAS com um JSON válido (sem markdown, sem texto extra) neste format
   }
 }
 
+/* ── ASSISTENTE GERAL (chat com IA sobre todo o negócio) ─────────
+   A IA nunca recebe os dados brutos: o app monta um resumo (snapshot)
+   já calculado pelas próprias funções do sistema (calcFin, aggregateClientes,
+   calcLucroPedido, estoque etc). A IA só interpreta e conversa em cima disso —
+   isso evita que ela "invente" ou erre contas de faturamento/lucro/estoque. */
+let chatAssistenteHistorico = []; // [{role:'user'|'model', text:''}]
+
+function montarSnapshotNegocio(){
+  const pedidos = load(K.P);
+  const hoje = todayStr();
+
+  const atrasados = pedidos.filter(isAtrasado).map(p=>({
+    nome: p.nome, dataEntrega: p.dataEntrega, diasAtraso: diasAtraso(p),
+    status: p.status, pendente: Math.max(0,(p.total||0)-(p.pago||0))
+  }));
+
+  const proximasEntregas = pedidos
+    .filter(p=>p.status!=='Entregue'&&p.status!=='Cancelado'&&p.dataEntrega&&p.dataEntrega>=hoje&&p.dataEntrega<=offsetDate(7))
+    .sort(sortByDate)
+    .map(p=>({ nome:p.nome, dataEntrega:p.dataEntrega, status:p.status, produtos: produtosResumoPedido(p) }));
+
+  const { rec, gasto, pend, recReceitas, recVendas } = calcFin();
+  appConfig = loadO(K.C);
+  const meta = parseFloat(appConfig.metaMensal)||0;
+
+  const clientes = aggregateClientes();
+  const clientesTop = [...clientes].sort((a,b)=>b.totalGasto-a.totalGasto).slice(0,8)
+    .map(c=>({ nome:c.nome, totalGasto:c.totalGasto, qtdPedidos:c.qtdPedidos, ultimaCompra:c.ultimaCompra }));
+  const clientesAfastados = clientes.filter(c=>{
+    if (!c.ultimaCompra) return false;
+    const dias = Math.round((new Date(hoje)-new Date(c.ultimaCompra))/86400000);
+    return dias >= 90;
+  }).map(c=>({ nome:c.nome, ultimaCompra:c.ultimaCompra, totalGasto:c.totalGasto }));
+
+  const materiais = load(K.M);
+  const estoqueBaixo = materiais.filter(m=>(m.estoqueMin||0)>0 && (m.estoque||0)<=(m.estoqueMin||0))
+    .map(m=>({ nome:m.nome, estoque:m.estoque, estoqueMin:m.estoqueMin, unidade:m.unidade }));
+  const valorEstoqueAtual = materiais.reduce((s,m)=>s+((m.custo||0)*(m.estoque||0)),0);
+
+  const pedidosComValor = pedidos.filter(p=>p.status!=='Cancelado' && (p.total||0)>0);
+  let lucroTotal=0, vendaTotal=0;
+  pedidosComValor.forEach(p=>{ const c=calcLucroPedido(p); lucroTotal+=c.lucroBruto; vendaTotal+=p.total||0; });
+  const margemMedia = vendaTotal>0 ? (lucroTotal/vendaTotal*100) : 0;
+
+  const produtos = load(K.PR).filter(p=>p.status!=='Inativo').map(p=>{
+    const custo = custoComposicao(p.composicao);
+    return { nome:p.nome, preco:p.preco, custoEstimado:custo, margem:(p.preco||0)-custo };
+  });
+
+  return {
+    dataDeHoje: hoje,
+    contadoresPedidos: {
+      novo: pedidos.filter(p=>p.status==='Novo').length,
+      emProducao: pedidos.filter(p=>p.status==='Em Produção').length,
+      pronto: pedidos.filter(p=>p.status==='Pronto').length,
+      entregue: pedidos.filter(p=>p.status==='Entregue').length,
+      cancelado: pedidos.filter(p=>p.status==='Cancelado').length,
+      atrasados: atrasados.length
+    },
+    pedidosAtrasados: atrasados,
+    proximasEntregas7dias: proximasEntregas,
+    financeiroDoMes: { faturamento:rec, deReceitas:recReceitas, deVendasAvulsas:recVendas, gastoDoMes:gasto, lucroEstimadoDoMes:rec-gasto, aReceberNoTotal:pend },
+    metaMensal: meta ? { valor:meta, recebidoMes:rec, percentualAtingido: Math.round(rec/meta*100) } : null,
+    lucratividadeGeral: { totalVendido:vendaTotal, lucroBrutoTotal:lucroTotal, margemMediaPct: Number(margemMedia.toFixed(1)) },
+    clientesTop, clientesAfastados90dias: clientesAfastados,
+    estoque: { valorParadoHoje: valorEstoqueAtual, materiaisComEstoqueBaixo: estoqueBaixo },
+    catalogoProdutos: produtos
+  };
+}
+
+function renderAssistenteScreen(){
+  renderAssistInsights();
+  renderChatAssistente();
+  if (!chatAssistenteHistorico.length){
+    document.getElementById('assist-chat').innerHTML = `<div class="assist-msg bot">Oi! 👋 Pode me perguntar qualquer coisa sobre seus pedidos, clientes, estoque ou financeiro. Também dá pra usar os atalhos acima.</div>`;
+  }
+}
+
+function renderAssistInsights(){
+  const s = montarSnapshotNegocio();
+  const el = document.getElementById('assist-insights');
+  const cards = [];
+  if (s.contadoresPedidos.atrasados > 0){
+    cards.push(`<div class="assist-insight-card" onclick="navigate('agenda')">🔴 <span><b>${s.contadoresPedidos.atrasados}</b> pedido${s.contadoresPedidos.atrasados===1?'':'s'} atrasado${s.contadoresPedidos.atrasados===1?'':'s'}</span></div>`);
+  }
+  if (s.estoque.materiaisComEstoqueBaixo.length > 0){
+    cards.push(`<div class="assist-insight-card" onclick="navigate('estoque')">📦 <span><b>${s.estoque.materiaisComEstoqueBaixo.length}</b> material(is) com estoque baixo</span></div>`);
+  }
+  if (s.metaMensal){
+    cards.push(`<div class="assist-insight-card" onclick="navigate('dashboard')">🎯 <span><b>${s.metaMensal.percentualAtingido}%</b> da meta mensal atingida</span></div>`);
+  }
+  if (s.clientesAfastados90dias.length > 0){
+    cards.push(`<div class="assist-insight-card" onclick="navigate('clientes')">💌 <span><b>${s.clientesAfastados90dias.length}</b> cliente(s) sem comprar há 90+ dias</span></div>`);
+  }
+  el.innerHTML = cards.join('');
+}
+
+function renderChatAssistente(){
+  const el = document.getElementById('assist-chat');
+  if (!chatAssistenteHistorico.length) return; // mensagem de boas-vindas é tratada em renderAssistenteScreen
+  el.innerHTML = chatAssistenteHistorico.map(m=>`<div class="assist-msg ${m.role==='user'?'user':'bot'}">${escapeHtmlAssist(m.text)}</div>`).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+function escapeHtmlAssist(t){
+  return (t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function perguntarRapido(pergunta){
+  document.getElementById('assist-input').value = pergunta;
+  enviarPerguntaAssistente();
+}
+
+async function enviarPerguntaAssistente(){
+  const input = document.getElementById('assist-input');
+  const pergunta = input.value.trim();
+  if (!pergunta) return;
+
+  appConfig = loadO(K.C);
+  const apiKey = appConfig.geminiApiKey;
+  if (!apiKey){
+    showToast('Configure a chave da API do Gemini em Configurações primeiro.');
+    showApiKeyConfig();
+    return;
+  }
+
+  chatAssistenteHistorico.push({ role:'user', text: pergunta });
+  input.value = '';
+  renderChatAssistente();
+  document.getElementById('assist-loading').style.display = 'block';
+
+  const snapshot = montarSnapshotNegocio();
+
+  const systemPrompt = `Você é o assistente virtual de dentro do app de gestão de uma confeiteira/papelaria personalizada chamada "Graça em Papel". Você conversa com a dona do negócio e responde perguntas sobre pedidos, clientes, estoque, financeiro e produtos.
+
+IMPORTANTE:
+- Use APENAS os dados do resumo (snapshot) abaixo para responder. Não invente números. Se a pergunta não puder ser respondida com esses dados, diga isso claramente e sugira onde ela pode ver mais detalhes no app (ex: tela de Pedidos, Financeiro, Estoque).
+- Responda apenas sobre o negócio (pedidos, clientes, produtos, estoque, financeiro). Se a pergunta for sobre outro assunto, explique educadamente que você só ajuda com o negócio.
+- Seja direta, calorosa e objetiva, em português do Brasil. Use valores em R$ quando fizer sentido. Evite respostas longas demais — poucos parágrafos ou uma lista curta já resolve.
+- Hoje é ${snapshot.dataDeHoje}.
+
+Resumo atual do negócio (JSON):
+${JSON.stringify(snapshot)}`;
+
+  // Monta o histórico de conversa no formato da API (contents), com o resumo como primeira instrução "system-like"
+  const contents = [
+    { role: 'user', parts: [{ text: systemPrompt }] },
+    { role: 'model', parts: [{ text: 'Entendido! Estou pronta para ajudar com base nesses dados.' }] },
+    ...chatAssistenteHistorico.map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.text }] }))
+  ];
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast('Erro na API: ' + (data?.error?.message || res.status));
+      chatAssistenteHistorico.pop();
+      renderChatAssistente();
+      return;
+    }
+    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!raw) {
+      showToast('A IA não retornou resposta. Tente novamente.');
+      chatAssistenteHistorico.pop();
+      renderChatAssistente();
+      return;
+    }
+    chatAssistenteHistorico.push({ role:'model', text: raw.trim() });
+    renderChatAssistente();
+  } catch(e) {
+    showToast('Erro ao conectar com a IA. Verifique sua chave e conexão.');
+    chatAssistenteHistorico.pop();
+    renderChatAssistente();
+  } finally {
+    document.getElementById('assist-loading').style.display = 'none';
+  }
+}
+
 function openPedidoModal(p=null) {
   document.getElementById('modal-pedido-title').textContent = p ? 'Editar pedido' : 'Novo pedido';
   const set = (id, val) => { document.getElementById(id).value = val||''; };
@@ -3856,6 +4142,8 @@ function openMaterialModal(m=null){
   document.getElementById('mat-estoque').value      = m?.estoque ?? '';
   document.getElementById('mat-estoque-min').value  = m?.estoqueMin ?? '';
   document.getElementById('mat-link').value         = m?.link || '';
+  document.getElementById('mat-pacote-valor').value = '';
+  document.getElementById('mat-pacote-qtd').value   = '';
   renderMatHistorico(m?.id);
   openModal('modal-material');
 }
@@ -3941,6 +4229,8 @@ function openMaterialQuick(){
   document.getElementById('mq-unidade').value = 'unidade';
   document.getElementById('mq-custo').value = '';
   document.getElementById('mq-estoque').value = '';
+  document.getElementById('mq-pacote-valor').value = '';
+  document.getElementById('mq-pacote-qtd').value = '';
   openModal('modal-material-quick');
   setTimeout(()=>document.getElementById('mq-nome')?.focus(), 250);
 }
@@ -3988,16 +4278,48 @@ function openEstoqueEntradaModal(matId){
     + '<option value="__new__">➕ Cadastrar novo material...</option>';
   if (matId) sel.value = matId;
   document.getElementById('ee-qtd').value = '';
+  document.getElementById('ee-valor-total').value = '';
+  document.getElementById('ee-calc-preview').textContent = '';
   document.getElementById('ee-data').value = todayStr();
   document.getElementById('ee-obs').value = '';
   onEeMatChange();
   openModal('modal-estoque-entrada');
 }
 
+// Calcula o custo por unidade a partir do preço do pacote e da quantidade de unidades nele
+// prefix: 'mat' (Novo material), 'mq' (Cadastro rápido) ou 'ee' (Entrada de estoque) — todos usam o padrão {prefix}-pacote-valor / {prefix}-pacote-qtd / {prefix}-custo
+function calcularCustoPacote(prefix){
+  const valor = parseFloat(document.getElementById(prefix+'-pacote-valor').value);
+  const qtd   = parseFloat(document.getElementById(prefix+'-pacote-qtd').value);
+  if (!valor || !qtd || qtd <= 0){ showToast('Informe o preço do pacote e a quantidade de unidades nele'); return; }
+  const custoUnit = valor / qtd;
+  document.getElementById(prefix+'-custo').value = custoUnit.toFixed(4);
+  showToast('Custo unitário calculado: ' + fmtM(custoUnit));
+  if (prefix === 'ee') updateEeTotalPreview();
+}
+
+// Na Entrada de estoque: se a pessoa souber apenas o valor total pago (ex: pacote de 50 folhas por R$15),
+// calcula o custo unitário automaticamente a partir da quantidade comprada já informada
+function onEeQtdOuValorChange(){
+  const qtd   = parseFloat(document.getElementById('ee-qtd').value) || 0;
+  const total = parseFloat(document.getElementById('ee-valor-total').value) || 0;
+  const preview = document.getElementById('ee-calc-preview');
+  if (qtd > 0 && total > 0) {
+    const custoUnit = total / qtd;
+    document.getElementById('ee-custo').value = custoUnit.toFixed(4);
+    preview.textContent = `= ${fmtM(custoUnit)} por unidade`;
+  } else {
+    preview.textContent = '';
+  }
+  updateEeTotalPreview();
+}
+
 function onEeMatChange(){
   const matId = document.getElementById('ee-mat').value;
   const m = load(K.M).find(x=>x.id===matId);
   document.getElementById('ee-custo').value = m ? (m.custo ?? '') : '';
+  document.getElementById('ee-valor-total').value = '';
+  document.getElementById('ee-calc-preview').textContent = '';
   updateEeTotalPreview();
 }
 
