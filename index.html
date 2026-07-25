@@ -1031,6 +1031,7 @@ select.form-control {
         <button class="tab" data-tab="despesas" onclick="setFinTab(this)">Despesas</button>
         <button class="tab" data-tab="pagamentos" onclick="setFinTab(this)">Pagamentos</button>
         <button class="tab" data-tab="lucratividade" onclick="setFinTab(this)">Lucratividade</button>
+        <button class="tab" data-tab="estoque" onclick="setFinTab(this)">Estoque</button>
       </div>
       <div id="fin-list"></div>
     </div>
@@ -1053,7 +1054,7 @@ select.form-control {
     <div class="screen" id="screen-estoque">
       <div class="tabs">
         <button class="tab active" data-tab="materiais" onclick="setEstoqueTab(this)">Materiais</button>
-        <button class="tab" data-tab="relatorio" onclick="setEstoqueTab(this)">Relatório</button>
+        <button class="tab" data-tab="relatorio" onclick="setEstoqueTab(this)">Níveis</button>
       </div>
       <div id="estoque-content"></div>
     </div>
@@ -3930,8 +3931,90 @@ function renderEstoqueContent(tab){
     </button>`;
     el.innerHTML = btnEntrada + (mats.length ? mats.map(m=>materialCardHTML(m)).join('') : emptyHTML('Nenhum material cadastrado.<br><strong>Toque no + para adicionar.</strong>'));
   } else {
-    el.innerHTML = renderRelatorioEstoque();
+    el.innerHTML = renderNiveisEstoque();
+    filterNiveis();
   }
+}
+
+// Classifica o nível de estoque de um material em boa quantidade / acabando / baixo / crítico.
+// Quando o material tem um estoque mínimo cadastrado, usa ele como referência relativa
+// (2x o mínimo ou mais = boa; entre 1x e 2x = acabando; entre 0.5x e 1x = baixo; abaixo = crítico).
+// Sem estoque mínimo cadastrado, cai para faixas fixas gerais como aproximação.
+function statusEstoqueMaterial(m){
+  const e   = parseFloat(m.estoque) || 0;
+  const min = parseFloat(m.estoqueMin) || 0;
+  if (min > 0){
+    if (e >= min * 2)   return { tier:'boa',      cor:'#1F9C5C',       bg:'#E8F8EF',           border:'#A9E8C6',           label:'Boa quantidade' };
+    if (e >= min)       return { tier:'acabando', cor:'#C0701A',       bg:'#FFF3E0',           border:'#FBD9A6',           label:'Acabando' };
+    if (e >= min * 0.5) return { tier:'baixo',    cor:'var(--danger)', bg:'var(--rose-pale)',  border:'var(--rose-light)', label:'Baixo' };
+    return                 { tier:'critico', cor:'var(--danger)', bg:'var(--rose-pale)',  border:'var(--rose-light)', label:'Crítico' };
+  }
+  // Sem mínimo definido: usa faixas gerais como aproximação
+  if (e >= 100) return { tier:'boa',      cor:'#1F9C5C',      bg:'#E8F8EF',        border:'#A9E8C6',       label:'Boa quantidade' };
+  if (e >= 50)  return { tier:'acabando', cor:'#C0701A',      bg:'#FFF3E0',        border:'#FBD9A6',       label:'Acabando' };
+  if (e >= 20)  return { tier:'baixo',    cor:'var(--danger)', bg:'var(--rose-pale)', border:'var(--rose-light)', label:'Baixo' };
+  return          { tier:'critico',  cor:'var(--danger)', bg:'var(--rose-pale)', border:'var(--rose-light)', label:'Crítico' };
+}
+
+// Lista de materiais em ordem alfabética, com sinalização visual do nível de estoque
+function renderNiveisEstoque(){
+  const mats = load(K.M);
+  if (!mats.length) return `<div class="card">${emptyHTML('Nenhum material cadastrado.<br><strong>Cadastre materiais na aba Materiais.</strong>')}</div>`;
+
+  const contagem = { boa:0, acabando:0, baixo:0, critico:0 };
+  mats.forEach(m=>{ contagem[statusEstoqueMaterial(m).tier]++; });
+
+  return `
+    <div class="fin-grid">
+      <div class="fin-tile"><div class="fin-tile-label">Boa quantidade</div><div class="fin-tile-value green">${contagem.boa}</div></div>
+      <div class="fin-tile"><div class="fin-tile-label">Acabando</div><div class="fin-tile-value" style="color:#C0701A">${contagem.acabando}</div></div>
+      <div class="fin-tile"><div class="fin-tile-label">Baixo</div><div class="fin-tile-value red">${contagem.baixo}</div></div>
+      <div class="fin-tile"><div class="fin-tile-label">Crítico</div><div class="fin-tile-value red">${contagem.critico}</div></div>
+    </div>
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" placeholder="Buscar material..." id="search-niveis" oninput="filterNiveis()">
+    </div>
+    <div id="niveis-list"></div>
+    <div style="font-size:11px;color:var(--text-soft);text-align:center;margin-top:10px">
+      🟢 boa quantidade (2x+ o mínimo) · 🟡 acabando (entre 1x e 2x o mínimo) · 🔴 baixo/crítico (abaixo do mínimo)<br>
+      Materiais sem estoque mínimo cadastrado usam faixas gerais (100/50/20 unidades) como aproximação.
+    </div>
+  `;
+}
+
+// Filtra e (re)renderiza apenas a lista de materiais dentro da tela de Níveis,
+// mantendo o campo de busca e os cartões de resumo intactos (sem perder o foco a cada tecla)
+function filterNiveis(){
+  const el = document.getElementById('niveis-list');
+  if (!el) return;
+  const q = (document.getElementById('search-niveis')?.value || '').toLowerCase();
+  const mats = [...load(K.M)]
+    .filter(m => !q || (m.nome||'').toLowerCase().includes(q))
+    .sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR'));
+
+  if (!mats.length){ el.innerHTML = emptyHTML('Nenhum material encontrado.'); return; }
+
+  el.innerHTML = `
+    <div class="card" style="padding:4px 20px">
+      ${mats.map(m=>{
+        const s = statusEstoqueMaterial(m);
+        return `
+        <div class="tx-row">
+          <div class="tx-left" onclick="openMaterialById('${m.id}')" style="cursor:pointer">
+            <div style="width:10px;height:10px;border-radius:50%;background:${s.cor};flex-shrink:0"></div>
+            <div>
+              <div class="tx-desc">${m.nome}</div>
+              <div class="tx-date">${m.estoque||0} ${m.unidade||''}${m.estoqueMin?' · mín. '+m.estoqueMin+' '+(m.unidade||''):''}</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+            <span class="badge" style="background:${s.bg};color:${s.cor};border-color:${s.border}">${s.label}</span>
+            <button class="btn btn-ghost btn-sm" onclick="openEstoqueEntradaModal('${m.id}')">+ Entrada</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
 }
 
 // Custo de uma composição (lista de {matId, qtd}) com base no custo unitário atual de cada material
@@ -4716,6 +4799,8 @@ function renderFinList(tab){
     el.innerHTML = anos.map(ano=>renderPilhaDespesas(ano, porAno[ano])).join('');
   } else if(tab==='lucratividade'){
     el.innerHTML = renderLucratividade();
+  } else if(tab==='estoque'){
+    el.innerHTML = renderRelatorioEstoque();
   } else {
     const ps=load(K.P).filter(p=>p.pendente>0&&p.status!=='Cancelado').sort(sortByDate);
     if(!ps.length){el.innerHTML=`<div class="card">${emptyHTML('Nenhum pagamento pendente.')}</div>`;return;}
