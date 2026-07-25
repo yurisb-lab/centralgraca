@@ -815,6 +815,13 @@ select.form-control {
         // Sempre sobrescreve o localStorage com os dados do Firestore (fonte da verdade)
         localStorage.setItem(lsKey, JSON.stringify(items));
       }
+      // cdg_ia_perfis é um objeto (chave = cliente), não um array, então precisa de conversão à parte
+      try {
+        const iaItems = await window.fbLoadCollection('ia_perfis');
+        const iaMap = {};
+        iaItems.forEach(it => { if (it && it.id) { const { id, ...rest } = it; iaMap[id] = rest; } });
+        localStorage.setItem('cdg_ia_perfis', JSON.stringify(iaMap));
+      } catch(e) { console.warn('Erro ao sincronizar perfis de IA:', e); }
     } catch(e) { console.warn('Firestore sync error:', e); }
   };
 
@@ -1388,6 +1395,7 @@ select.form-control {
     <div id="cli-stats" style="margin-bottom:6px"></div>
 
     <div id="cli-ia-btn-wrap" style="margin-top:12px"></div>
+    <div id="cli-ia-perfil" style="margin-top:12px"></div>
 
     <div id="cli-fideliza" class="card" style="display:none;background:var(--rose-pale);border-color:var(--rose-light);margin-top:12px">
       <div class="card-label" style="color:var(--rose-dark)">💌 Momento de fidelização</div>
@@ -1877,6 +1885,11 @@ select.form-control {
     <div class="form-group">
       <label class="form-label">Colar conversa recente (opcional)</label>
       <textarea class="form-control" id="ia-conversa-extra" rows="4" placeholder="Cole aqui trechos de uma conversa recente para enriquecer a análise..."></textarea>
+      <input type="file" id="ia-conversa-arquivo" accept=".txt" style="display:none" onchange="importarTxtIaCliente(this)">
+      <button type="button" class="btn btn-ghost btn-sm" style="width:100%;margin-top:8px" onclick="document.getElementById('ia-conversa-arquivo').click()">📄 Importar conversa de um arquivo .txt</button>
+    </div>
+    <div style="font-size:11px;color:var(--text-soft);line-height:1.6;background:var(--blue-pale);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:16px">
+      ℹ️ A IA vai analisar apenas o que for relacionado aos pedidos e ao relacionamento comercial com este cliente (produtos, valores, preferências, datas etc). Trechos sobre outros assuntos na conversa são ignorados.
     </div>
     <button class="btn btn-primary" id="ia-gerar-btn" style="width:100%;margin-bottom:16px" onclick="gerarAnaliseIA()">✨ Gerar análise com IA</button>
     <div id="ia-loading" style="display:none;text-align:center;padding:14px;font-size:13px;color:var(--blue-dark)">⏳ Analisando perfil do cliente...</div>
@@ -3064,8 +3077,11 @@ function openClienteDetail(key) {
   const _iaPerfilExistente = loadIaPerfis()[c.key];
   document.getElementById('cli-ia-btn-wrap').innerHTML = `
     <button class="btn btn-ghost btn-sm" style="width:100%" onclick="abrirAnaliseIA('${c.key}')">
-      🧠 ${_iaPerfilExistente ? 'Ver perfil e sugestões com IA' : 'Gerar perfil e sugestões com IA'}
+      🧠 ${_iaPerfilExistente ? 'Atualizar análise / importar nova conversa' : 'Gerar perfil e sugestões com IA'}
     </button>`;
+  // Mostra o perfil (se já existir) direto aqui na tela do cliente, sem precisar abrir a Área IA
+  _iaClienteAtual = c.key;
+  renderIaResultado(_iaPerfilExistente || null, 'cli-ia-perfil');
 
   document.getElementById('cli-atual').innerHTML = atual ? `
     <div class="card-label">Pedido em destaque</div>
@@ -3120,7 +3136,12 @@ function loadIaPerfis(){ return loadO(K.IA); }
 function saveIaPerfil(clienteKey, data){
   const all = loadIaPerfis();
   all[clienteKey] = data;
-  save(K.IA, all);
+  // K.IA guarda um objeto (não um array), então não passa pelo save() genérico —
+  // gravamos local e enviamos ao Firestore manualmente, para sincronizar entre dispositivos.
+  localStorage.setItem(K.IA, JSON.stringify(all));
+  if (window.fbSaveCollection) {
+    window.fbSaveCollection('ia_perfis', [{ id: clienteKey, ...data }]).catch(()=>{});
+  }
 }
 
 function renderIaScreen(){
@@ -3149,6 +3170,23 @@ function iaClienteCardHTML(c, perfil){
 
 let _iaClienteAtual = null;
 
+// Lê um arquivo .txt selecionado e coloca o conteúdo no campo de conversa recente da análise IA
+function importarTxtIaCliente(input){
+  const file = input.files[0];
+  if (!file) return;
+  if (!file.name.toLowerCase().endsWith('.txt')) { showToast('Selecione um arquivo .txt'); input.value=''; return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const texto = (e.target.result || '').toString();
+    const campo = document.getElementById('ia-conversa-extra');
+    campo.value = campo.value ? (campo.value + '\n' + texto) : texto;
+    showToast('Arquivo importado! Revise o texto antes de gerar a análise.');
+  };
+  reader.onerror = () => showToast('Não foi possível ler o arquivo.');
+  reader.readAsText(file, 'UTF-8');
+  input.value = '';
+}
+
 function abrirAnaliseIA(clienteKey){
   _iaClienteAtual = clienteKey;
   const c = aggregateClientes().find(x => x.key === clienteKey);
@@ -3156,15 +3194,22 @@ function abrirAnaliseIA(clienteKey){
   document.getElementById('ia-modal-nome').textContent = c.nome || '—';
   document.getElementById('ia-modal-sub').textContent = `${c.qtdPedidos} pedido(s) · ${fmtM(c.totalGasto)} em compras`;
   document.getElementById('ia-conversa-extra').value = '';
+  document.getElementById('ia-conversa-arquivo').value = '';
   document.getElementById('ia-resultado').style.display = 'block';
   renderIaResultado(loadIaPerfis()[clienteKey]);
   closeModal('modal-cliente');
   openModal('modal-ia');
 }
 
-function renderIaResultado(perfil){
-  const wrap = document.getElementById('ia-resultado');
-  if (!perfil){ wrap.innerHTML = '<div style="font-size:12px;color:var(--text-soft)">Nenhuma análise gerada ainda. Cole uma conversa (opcional) e toque em "Gerar análise com IA".</div>'; return; }
+function renderIaResultado(perfil, targetId='ia-resultado'){
+  const wrap = document.getElementById(targetId);
+  if (!wrap) return;
+  if (!perfil){
+    wrap.innerHTML = targetId==='ia-resultado'
+      ? '<div style="font-size:12px;color:var(--text-soft)">Nenhuma análise gerada ainda. Cole uma conversa (opcional) e toque em "Gerar análise com IA".</div>'
+      : '';
+    return;
+  }
   wrap.innerHTML = `
     <div class="card" style="background:var(--blue-pale);border:none;box-shadow:none;padding:14px 16px">
       <div class="card-label">Perfil</div>
@@ -3220,12 +3265,17 @@ async function gerarAnaliseIA(){
 
   const prompt = `Você é um assistente de uma confeiteira/papelaria personalizada chamada "Graça em Papel". Analise o histórico de compras de um cliente e, se houver, uma conversa recente, e gere um perfil útil para fidelização e vendas.
 
+IMPORTANTE — escopo da análise:
+- Considere APENAS informações relacionadas a pedidos, produtos, valores, prazos, preferências de compra, datas de eventos e o relacionamento comercial deste cliente com a Graça em Papel.
+- Se a conversa recente colada abaixo contiver assuntos pessoais, de terceiros, ou qualquer conteúdo sem relação com pedidos/negócio, ignore completamente esses trechos — não os resuma, não os comente e não os inclua em nenhum campo da resposta.
+- Se a conversa não tiver nenhuma informação relevante sobre pedidos/negócio, trate como se ela não tivesse sido enviada e baseie-se apenas no histórico de pedidos.
+
 Cliente: ${c.nome}
 Total gasto: ${fmtM(c.totalGasto)}
 Qtd de pedidos: ${c.qtdPedidos}
 Histórico de pedidos:
 ${historico}
-${conversaExtra ? `\nConversa recente colada pela dona do negócio:\n"""\n${conversaExtra}\n"""` : ''}
+${conversaExtra ? `\nConversa recente colada pela dona do negócio (use apenas as partes relacionadas a pedidos/negócio, conforme instruído acima):\n"""\n${conversaExtra}\n"""` : ''}
 
 Responda APENAS com um JSON válido (sem markdown, sem texto extra) neste formato:
 {
