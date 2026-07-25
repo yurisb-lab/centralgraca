@@ -3566,38 +3566,71 @@ IMPORTANTE:
 Resumo atual do negócio (JSON):
 ${JSON.stringify(snapshot)}`;
 
-  // Monta o histórico de conversa no formato da API (contents), com o resumo como primeira instrução "system-like"
+  // Só manda as últimas 10 mensagens (5 perguntas + 5 respostas) pra não pesar o pedido com o tempo
+  const historicoRecente = chatAssistenteHistorico.slice(0, -1).slice(-10);
+
   const contents = [
     { role: 'user', parts: [{ text: systemPrompt }] },
     { role: 'model', parts: [{ text: 'Entendido! Estou pronta para ajudar com base nesses dados.' }] },
-    ...chatAssistenteHistorico.map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.text }] }))
+    ...historicoRecente.map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.text }] })),
+    { role: 'user', parts: [{ text: pergunta }] }
   ];
 
+  // Mensagem do bot "vazia" que vai sendo preenchida em tempo real conforme o texto chega (streaming)
+  chatAssistenteHistorico.push({ role:'model', text: '' });
+  const idxResposta = chatAssistenteHistorico.length - 1;
+
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contents })
     });
-    const data = await res.json();
-    if (!res.ok) {
+
+    if (!res.ok || !res.body) {
+      const data = await res.json().catch(()=>null);
       showToast('Erro na API: ' + (data?.error?.message || res.status));
-      chatAssistenteHistorico.pop();
+      chatAssistenteHistorico.splice(idxResposta - 1, 2);
       renderChatAssistente();
       return;
     }
-    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!raw) {
+
+    document.getElementById('assist-loading').style.display = 'none';
+
+    const reader  = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '', textoCompleto = '';
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const linhas = buffer.split('\n');
+      buffer = linhas.pop();
+      for (const linha of linhas) {
+        if (!linha.startsWith('data: ')) continue;
+        const jsonStr = linha.slice(6).trim();
+        if (!jsonStr) continue;
+        try {
+          const evento = JSON.parse(jsonStr);
+          const pedaco = evento?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (pedaco) {
+            textoCompleto += pedaco;
+            chatAssistenteHistorico[idxResposta].text = textoCompleto;
+            renderChatAssistente();
+          }
+        } catch(e) { /* linha parcial ainda incompleta, ignora e espera o próximo pedaço */ }
+      }
+    }
+
+    if (!textoCompleto.trim()) {
       showToast('A IA não retornou resposta. Tente novamente.');
-      chatAssistenteHistorico.pop();
+      chatAssistenteHistorico.splice(idxResposta - 1, 2);
       renderChatAssistente();
-      return;
     }
-    chatAssistenteHistorico.push({ role:'model', text: raw.trim() });
-    renderChatAssistente();
   } catch(e) {
     showToast('Erro ao conectar com a IA. Verifique sua chave e conexão.');
-    chatAssistenteHistorico.pop();
+    chatAssistenteHistorico.splice(idxResposta - 1, 2);
     renderChatAssistente();
   } finally {
     document.getElementById('assist-loading').style.display = 'none';
