@@ -3393,10 +3393,10 @@ function clienteCardHTML(c) {
   const fid = fidelidadeInfo(c);
   const wa  = c.whatsapp ? `https://wa.me/55${c.whatsapp.replace(/\D/g, '')}` : null;
   return `
-  <div class="pedido-card" onclick="openClienteDetail('${c.key}')">
+  <div class="pedido-card" onclick="openClienteDetail('${escArg(c.key)}')">
     <div class="pedido-card-header">
       <div>
-        <div class="pedido-nome">${c.nome || '—'}</div>
+        <div class="pedido-nome">${escAttr(c.nome) || '—'}</div>
         <div class="pedido-sub">${c.qtdPedidos} pedido${c.qtdPedidos === 1 ? '' : 's'} · última compra ${c.ultimaCompra ? formatDate(c.ultimaCompra) : '—'}</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
@@ -3432,7 +3432,7 @@ function openClienteDetail(key) {
     ? `<button class="btn btn-ghost btn-sm" onclick="openClienteFormModal(${JSON.stringify({id:c.clienteId,nome:c.nome,whatsapp:c.whatsapp,obs:c.obs}).replace(/"/g,'&quot;')})">✎ Editar cadastro</button>${c.obs?`<div style="font-size:12px;color:var(--text-mid);margin-top:8px;line-height:1.6">${c.obs}</div>`:''}`
     : `<div class="card" style="background:var(--rose-pale);border-color:var(--rose-light);padding:12px 14px;margin:0">
         <div style="font-size:12px;color:var(--text-mid);line-height:1.6;margin-bottom:10px">Este cliente ainda não tem cadastro próprio — os dados vêm dos pedidos. Cadastre para editar nome/WhatsApp diretamente e manter tudo vinculado.</div>
-        <button class="btn btn-rose btn-sm" style="width:100%" onclick="migrarClienteLegado('${c.key}')">Cadastrar este cliente</button>
+        <button class="btn btn-rose btn-sm" style="width:100%" onclick="migrarClienteLegado('${escArg(c.key)}')">Cadastrar este cliente</button>
       </div>`;
 
   document.getElementById('cli-stats').innerHTML = `
@@ -3445,7 +3445,7 @@ function openClienteDetail(key) {
 
   const _iaPerfilExistente = loadIaPerfis()[c.key];
   document.getElementById('cli-ia-btn-wrap').innerHTML = `
-    <button class="btn btn-ghost btn-sm" style="width:100%" onclick="abrirAnaliseIA('${c.key}')">
+    <button class="btn btn-ghost btn-sm" style="width:100%" onclick="abrirAnaliseIA('${escArg(c.key)}')">
       🧠 ${_iaPerfilExistente ? 'Atualizar análise / importar nova conversa' : 'Gerar perfil e sugestões com IA'}
     </button>`;
   // Mostra o perfil (se já existir) direto aqui na tela do cliente, sem precisar abrir a Área IA
@@ -3525,10 +3525,10 @@ function renderIaScreen(){
 function iaClienteCardHTML(c, perfil){
   const resumo = perfil?.resumoPerfil || '';
   return `
-  <div class="pedido-card" onclick="abrirAnaliseIA('${c.key}')">
+  <div class="pedido-card" onclick="abrirAnaliseIA('${escArg(c.key)}')">
     <div class="pedido-card-header">
       <div>
-        <div class="pedido-nome">${c.nome || '—'}</div>
+        <div class="pedido-nome">${escAttr(c.nome) || '—'}</div>
         <div class="pedido-sub">${c.qtdPedidos} pedido${c.qtdPedidos===1?'':'s'} · ${fmtM(c.totalGasto)} em compras</div>
       </div>
       ${perfil ? `<span class="badge badge-pronto">Analisado</span>` : `<span class="badge badge-novo">Sem análise</span>`}
@@ -4945,7 +4945,7 @@ function getCategoriasProdutos(){
 function populateCategoriaSelect(selected){
   const cats = getCategoriasProdutos();
   const sel = document.getElementById('pr-categoria');
-  sel.innerHTML = cats.map(c=>`<option value="${c}">${c}</option>`).join('')
+  sel.innerHTML = cats.map(c=>`<option value="${escAttr(c)}">${escAttr(c)}</option>`).join('')
     + '<option value="__new__">➕ Adicionar nova categoria...</option>';
   sel.value = selected && cats.includes(selected) ? selected : (cats[0] || '');
 }
