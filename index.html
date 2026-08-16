@@ -894,6 +894,20 @@ select.form-control {
   }
   window._jsonEstavel = _jsonEstavel;
 
+  // Gravação local tolerante a cota cheia. Usa o guardarLocal do script
+  // principal quando ele existe, mas não depende dele: este módulo roda
+  // sozinho e uma falha aqui não pode passar despercebida.
+  function guardarLocalSeguro(k, v) {
+    if (typeof window.guardarLocal === 'function') return window.guardarLocal(k, v);
+    try {
+      localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
+      return true;
+    } catch(e) {
+      console.error('Falha ao gravar', k, 'no localStorage:', e);
+      return false;
+    }
+  }
+
   window.fbRegistrarEspelho = function(colName, items) {
     const alvo = (_espelho[colName] = {});
     (items || []).forEach(it => {
@@ -968,7 +982,7 @@ select.form-control {
       for (const [lsKey, colName] of Object.entries(cols)) {
         const items = await window.fbLoadCollection(colName);
         // Sempre sobrescreve o localStorage com os dados do Firestore (fonte da verdade)
-        localStorage.setItem(lsKey, JSON.stringify(items));
+        guardarLocalSeguro(lsKey, items);
         // Marca o que já está gravado, para as próximas gravações mandarem só o que mudar
         window.fbRegistrarEspelho(colName, items);
       }
@@ -977,7 +991,7 @@ select.form-control {
         const iaItems = await window.fbLoadCollection('ia_perfis');
         const iaMap = {};
         iaItems.forEach(it => { if (it && it.id) { const { id, ...rest } = it; iaMap[id] = rest; } });
-        localStorage.setItem('cdg_ia_perfis', JSON.stringify(iaMap));
+        guardarLocalSeguro('cdg_ia_perfis', iaMap);
         window.fbRegistrarEspelho('ia_perfis', iaItems);
       } catch(e) { console.warn('Erro ao sincronizar perfis de IA:', e); }
 
@@ -992,7 +1006,7 @@ select.form-control {
           (window.CONFIG_SOMENTE_LOCAL || []).forEach(k => {
             if (local[k] !== undefined) juntos[k] = local[k]; else delete juntos[k];
           });
-          localStorage.setItem('cdg_config', JSON.stringify(juntos));
+          guardarLocalSeguro('cdg_config', juntos);
         }
       } catch(e) { console.warn('Erro ao sincronizar configurações:', e); }
     } catch(e) { console.warn('Firestore sync error:', e); }
@@ -1253,6 +1267,7 @@ select.form-control {
 
     <!-- CONFIG -->
     <div class="screen" id="screen-config">
+      <div class="card" id="card-armazenamento" style="display:none"></div>
       <div class="card">
         <div class="cfg-row" onclick="showVerseConfig()">
           <div class="cfg-left">
@@ -2238,6 +2253,42 @@ select.form-control {
 /* ── DATA STORE ─────────────────────────────────── */
 const K = { P:'cdg_pedidos', R:'cdg_receitas', D:'cdg_despesas', V:'cdg_vendas', C:'cdg_config', U:'cdg_user', M:'cdg_materiais', PR:'cdg_produtos', EM:'cdg_estoque_mov', CLI:'cdg_clientes', IA:'cdg_ia_perfis', CHAT:'cdg_chat_hist' };
 const COL_MAP = { cdg_pedidos:'pedidos', cdg_receitas:'receitas', cdg_despesas:'despesas', cdg_vendas:'vendas', cdg_materiais:'materiais', cdg_produtos:'produtos_catalogo', cdg_estoque_mov:'estoque_movimentacoes', cdg_clientes:'clientes', cdg_chat_hist:'chat_historico' };
+/* ── Gravação local com rede de segurança ───────────────────────────
+   O localStorage tem teto (~5 MB). Ao estourar, setItem lança — e como o
+   save() gravava aqui ANTES de mandar para o Firestore, a exceção
+   interrompia a função e o registro não era salvo em lugar nenhum.
+   Agora a falha vira aviso e o envio ao Firestore acontece de qualquer
+   forma, então nada se perde.                                          */
+function bytesLocalStorage(){
+  let total = 0;
+  for (let i = 0; i < localStorage.length; i++){
+    const k = localStorage.key(i) || '';
+    total += k.length + (localStorage.getItem(k) || '').length;
+  }
+  return total * 2;   // UTF-16: 2 bytes por caractere
+}
+
+let _avisouArmazenamentoCheio = false;
+function guardarLocal(k, v){
+  try {
+    localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
+    return true;
+  } catch(e){
+    console.error('Falha ao gravar', k, 'no localStorage:', e);
+    if (!_avisouArmazenamentoCheio){
+      _avisouArmazenamentoCheio = true;
+      setTimeout(() => alert(
+        'O armazenamento deste aparelho encheu.\n\n' +
+        'Seus dados continuam sendo salvos na nuvem normalmente, mas este ' +
+        'aparelho pode ficar lento ou desatualizado até você limpar os dados ' +
+        'do site no navegador e entrar de novo.'
+      ), 100);
+    }
+    return false;
+  }
+}
+window.guardarLocal = guardarLocal;
+
 const load  = k => { try { return JSON.parse(localStorage.getItem(k)) || []; } catch { return []; } };
 const loadO = k => { try { return JSON.parse(localStorage.getItem(k)) || {}; } catch { return {}; } };
 
@@ -2261,7 +2312,7 @@ const _syncConfig = (cfg) => {
 let _configPendente = null;
 
 const save = (k, v) => {
-  localStorage.setItem(k, JSON.stringify(v));
+  guardarLocal(k, v);
   if (k === K.C) { _syncConfig(v); return; }
   if (!Array.isArray(v) || !COL_MAP[k]) return;
   if (_fbReady && window.fbSaveCollection) {
@@ -2283,7 +2334,7 @@ window.onFbReady = function() {
   if (_configPendente) { const c = _configPendente; _configPendente = null; _syncConfig(c); }
 };
 
-window._fbSave = (k,v) => localStorage.setItem(k, JSON.stringify(v));
+window._fbSave = (k,v) => guardarLocal(k, v);
 window.K = K;
 window.loadO = loadO;
 
@@ -2311,7 +2362,7 @@ let desperdicioAtual = [];  // materiais desperdiçados ao concluir o pedido: {m
 /* ── DEMO DATA ───────────────────────────────────── */
 function initDemo() {
   // Demo desativado — app usa dados reais do Firestore
-  localStorage.setItem('cdg_demo_done', '1');
+  guardarLocal('cdg_demo_done', '1');
 }
 /* ── AUTH ────────────────────────────────────────── */
 const USERS = [{ email:'lanekun@gmail.com', senha:'graciosa' }];
@@ -2342,26 +2393,6 @@ function doLogin() {
     bootApp();
   }
 }
-
-// Called by Firebase onAuthStateChanged when user is already logged in
-window.fbAuthReady = function(user) {
-  currentUser = { email: user.email, uid: user.uid };
-  save(K.U, currentUser);
-  window.fbSyncOnBoot().then(() => { initDemo(); bootApp(); });
-};
-
-window.fbSignedOut = function() {
-  // only act if app is showing
-  if (document.getElementById('app').classList.contains('active')) {
-    document.getElementById('app').classList.remove('active');
-    document.getElementById('login-screen').style.display = 'flex';
-    document.getElementById('fab').style.display = 'none';
-    closeSideNav();
-    document.getElementById('side-nav').style.display = 'none';
-    document.getElementById('menu-fab').style.display = 'none';
-    document.getElementById('side-nav-overlay').style.display = 'none';
-  }
-};
 
 function doLogout() {
   if (!confirm('Sair da conta?')) return;
@@ -2430,6 +2461,7 @@ function navigate(s, param) {
   if (s==='clientes')    renderClientes();
   if (s==='ia')          renderIaScreen();
   if (s==='assistente')  renderAssistenteScreen();
+  if (s==='config')      renderArmazenamento();
 
   closeSideNav(); // no-op visually on desktop (side-nav stays fixed open via CSS)
 }
@@ -3475,7 +3507,7 @@ function saveIaPerfil(clienteKey, data){
   all[clienteKey] = data;
   // K.IA guarda um objeto (não um array), então não passa pelo save() genérico —
   // gravamos local e enviamos ao Firestore manualmente, para sincronizar entre dispositivos.
-  localStorage.setItem(K.IA, JSON.stringify(all));
+  guardarLocal(K.IA, all);
   if (window.fbSaveCollection) {
     window.fbSaveCollection('ia_perfis', [{ id: clienteKey, ...data }]).catch(()=>{});
   }
@@ -4254,6 +4286,36 @@ function renderProdutosScreen(){
   el.innerHTML = prods.length ? prods.map(p=>produtoCardHTML(p)).join('') : emptyHTML('Nenhum produto cadastrado.<br><strong>Toque no + para adicionar.</strong>');
 }
 
+/* ── Armazenamento local ─────────────────────────────────────────
+   Mostra quanto do espaço do navegador já foi usado. O limite fica
+   perto de 5 MB e, ao ser atingido, o app parava de guardar dados
+   neste aparelho sem dar nenhum sinal.                              */
+function renderArmazenamento(){
+  const el = document.getElementById('card-armazenamento');
+  if (!el) return;
+  const usado = bytesLocalStorage();
+  const limite = 5 * 1024 * 1024;
+  const pct = Math.min(100, Math.round(usado / limite * 100));
+  // só aparece quando começa a importar
+  if (pct < 60){ el.style.display = 'none'; return; }
+  const cor = pct >= 85 ? 'var(--danger)' : 'var(--warning)';
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="card-label">Armazenamento deste aparelho</div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px">
+      <span style="color:var(--text-mid)">${(usado/1048576).toFixed(1)} MB de ~5 MB</span>
+      <b style="color:${cor}">${pct}%</b>
+    </div>
+    <div style="height:8px;background:var(--border-light);border-radius:4px;overflow:hidden">
+      <div style="height:100%;width:${pct}%;background:${cor};border-radius:4px"></div>
+    </div>
+    <div style="font-size:11.5px;color:var(--text-soft);line-height:1.6;margin-top:10px">
+      ${pct >= 85
+        ? 'Perto do limite. Seus dados continuam salvos na nuvem — se este aparelho parar de atualizar, limpe os dados do site no navegador e entre de novo.'
+        : 'Seus dados também ficam salvos na nuvem. Este espaço é só a cópia local para o app abrir rápido.'}
+    </div>`;
+}
+
 /* ════════════════════════════════════════════════════════════════
    TELA VITRINE — tudo que o cliente vê no app Graça em Papel
 ════════════════════════════════════════════════════════════════ */
@@ -4281,6 +4343,11 @@ async function carregarDadosVitrine(){
       window.fbLoadCollectionWithIds('gallery'),
       window.fbGetDocById('config','settings')
     ]);
+
+    // A loja passou a buscar só produtos com active == true. Documento
+    // antigo sem esse campo ficaria invisível para o cliente sem aviso —
+    // aqui ele é detectado e corrigido a partir do catálogo da Central.
+    await corrigirProdutosSemActive();
     window._vitrine = {
       categories: cats.sort((a,b)=>(a.order||0)-(b.order||0)||(a.name||'').localeCompare(b.name||'')),
       faqs:       faqs.sort((a,b)=>(a.order||0)-(b.order||0)),
@@ -4304,6 +4371,24 @@ function vitrineCarregandoHTML(oQue){
       + `<button class="btn btn-ghost" style="width:100%" onclick="carregarDadosVitrine()">Tentar de novo</button>`;
   }
   return vitrineAviso(`Carregando ${oQue} da loja...`);
+}
+
+async function corrigirProdutosSemActive(){
+  try {
+    const naLoja = await window.fbLoadCollectionWithIds('products');
+    const semCampo = naLoja.filter(p => p.active === undefined || p.active === null);
+    if (!semCampo.length) return;
+    const catalogo = load(K.PR);
+    for (const p of semCampo){
+      const local = catalogo.find(x => String(x.id) === String(p.id));
+      // sem correspondente na Central, mantém visível (era o comportamento antigo)
+      const ativo = local ? (!!local.vitrine && local.status !== 'Inativo') : true;
+      await window.fbUpdateDocById('products', p.id, { active: ativo });
+    }
+    showToast(`${semCampo.length} produto(s) da loja foram corrigidos.`);
+  } catch(e){
+    console.warn('Não foi possível verificar produtos sem o campo active:', e);
+  }
 }
 
 function renderVitrineContent(){
