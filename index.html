@@ -898,9 +898,15 @@ select.form-control {
   // principal quando ele existe, mas não depende dele: este módulo roda
   // sozinho e uma falha aqui não pode passar despercebida.
   function guardarLocalSeguro(k, v) {
+    const json = typeof v === 'string' ? v : JSON.stringify(v);
+    // coleções grandes vão para o IndexedDB através do script principal
+    if (typeof window.guardarGrande === 'function' && window.CHAVES_GRANDES?.has(k)) {
+      window.guardarGrande(k, json);
+      return true;
+    }
     if (typeof window.guardarLocal === 'function') return window.guardarLocal(k, v);
     try {
-      localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
+      localStorage.setItem(k, json);
       return true;
     } catch(e) {
       console.error('Falha ao gravar', k, 'no localStorage:', e);
@@ -2259,14 +2265,6 @@ const COL_MAP = { cdg_pedidos:'pedidos', cdg_receitas:'receitas', cdg_despesas:'
    interrompia a função e o registro não era salvo em lugar nenhum.
    Agora a falha vira aviso e o envio ao Firestore acontece de qualquer
    forma, então nada se perde.                                          */
-function bytesLocalStorage(){
-  let total = 0;
-  for (let i = 0; i < localStorage.length; i++){
-    const k = localStorage.key(i) || '';
-    total += k.length + (localStorage.getItem(k) || '').length;
-  }
-  return total * 2;   // UTF-16: 2 bytes por caractere
-}
 
 let _avisouArmazenamentoCheio = false;
 function guardarLocal(k, v){
@@ -2289,8 +2287,93 @@ function guardarLocal(k, v){
 }
 window.guardarLocal = guardarLocal;
 
-const load  = k => { try { return JSON.parse(localStorage.getItem(k)) || []; } catch { return []; } };
-const loadO = k => { try { return JSON.parse(localStorage.getItem(k)) || {}; } catch { return {}; } };
+/* ── Onde a cópia local dos dados fica guardada ──────────────────────
+   As coleções de negócio (pedidos, vendas, movimentações...) só crescem, e
+   o localStorage tem teto de ~5 MB. Elas passam a viver no IndexedDB, cujo
+   limite é de centenas de MB, com o conteúdo espelhado em memória para o
+   load() continuar síncrono — todo o resto do app depende disso.
+
+   Ficam no localStorage apenas as chaves pequenas que precisam ser lidas
+   antes da hidratação: a sessão e as configurações.                       */
+const CHAVES_GRANDES = new Set([
+  K.P, K.R, K.D, K.V, K.M, K.PR, K.EM, K.CLI, K.CHAT, K.IA
+]);
+
+const _cache = {};   // chave -> JSON em texto (mesma semântica do localStorage)
+window.CHAVES_GRANDES = CHAVES_GRANDES;
+
+const IDB_NOME = 'cdg_dados', IDB_STORE = 'kv';
+let _idb, _idbPromessa;
+
+function abrirIDB(){
+  if (_idbPromessa) return _idbPromessa;
+  _idbPromessa = new Promise(resolve => {
+    if (!('indexedDB' in window)) return resolve(null);
+    let req;
+    try { req = indexedDB.open(IDB_NOME, 1); } catch { return resolve(null); }
+    req.onupgradeneeded = () => { req.result.createObjectStore(IDB_STORE); };
+    req.onsuccess = () => { _idb = req.result; resolve(_idb); };
+    req.onerror   = () => resolve(null);
+    req.onblocked = () => resolve(null);
+  });
+  return _idbPromessa;
+}
+
+function idbOperacao(modo, fn){
+  return abrirIDB().then(db => {
+    if (!db) return null;
+    return new Promise(resolve => {
+      let tx;
+      try { tx = db.transaction(IDB_STORE, modo); } catch { return resolve(null); }
+      const req = fn(tx.objectStore(IDB_STORE));
+      tx.onerror = tx.onabort = () => resolve(null);
+      if (req) req.onsuccess = () => resolve(req.result);
+      else tx.oncomplete = () => resolve(true);
+    });
+  }).catch(() => null);
+}
+
+const idbLer     = k      => idbOperacao('readonly',  st => st.get(k));
+const idbGravar  = (k, v) => idbOperacao('readwrite', st => st.put(v, k));
+
+// Grava uma coleção grande: memória agora, IndexedDB em seguida
+function guardarGrande(k, json){
+  _cache[k] = json;
+  idbGravar(k, json).then(ok => {
+    if (ok === null && !_avisouArmazenamentoCheio){
+      _avisouArmazenamentoCheio = true;
+      setTimeout(() => alert(
+        'Não foi possível guardar os dados neste aparelho.\n\n' +
+        'Seus dados continuam sendo salvos na nuvem normalmente — nada foi perdido.'
+      ), 100);
+    }
+  });
+}
+window.guardarGrande = guardarGrande;
+
+/* Traz para a memória o que já estava guardado. Roda antes de qualquer
+   tela abrir. Na primeira vez após esta mudança, migra o que estava no
+   localStorage e libera aquele espaço.                                    */
+async function hidratarCache(){
+  for (const k of CHAVES_GRANDES){
+    let json = await idbLer(k);
+    if (json == null){
+      const antigo = localStorage.getItem(k);
+      if (antigo != null){
+        const gravou = await idbGravar(k, antigo);
+        // só libera o localStorage depois de confirmar a cópia
+        if (gravou !== null) { try { localStorage.removeItem(k); } catch {} }
+        json = antigo;
+      }
+    }
+    if (json != null) _cache[k] = json;
+  }
+}
+window.hidratarCache = hidratarCache;
+
+const _lerBruto = k => (k in _cache) ? _cache[k] : localStorage.getItem(k);
+const load  = k => { try { return JSON.parse(_lerBruto(k)) || []; } catch { return []; } };
+const loadO = k => { try { return JSON.parse(_lerBruto(k)) || {}; } catch { return {}; } };
 
 // Fila de saves pendentes enquanto Firebase não carregou
 const _saveQueue = [];
@@ -2312,7 +2395,8 @@ const _syncConfig = (cfg) => {
 let _configPendente = null;
 
 const save = (k, v) => {
-  guardarLocal(k, v);
+  if (CHAVES_GRANDES.has(k)) guardarGrande(k, JSON.stringify(v));
+  else guardarLocal(k, v);
   if (k === K.C) { _syncConfig(v); return; }
   if (!Array.isArray(v) || !COL_MAP[k]) return;
   if (_fbReady && window.fbSaveCollection) {
@@ -2334,7 +2418,7 @@ window.onFbReady = function() {
   if (_configPendente) { const c = _configPendente; _configPendente = null; _syncConfig(c); }
 };
 
-window._fbSave = (k,v) => guardarLocal(k, v);
+window._fbSave = (k,v) => CHAVES_GRANDES.has(k) ? guardarGrande(k, JSON.stringify(v)) : guardarLocal(k, v);
 window.K = K;
 window.loadO = loadO;
 
@@ -2377,21 +2461,17 @@ function doLogin() {
   currentUser = { email };
   save(K.U, currentUser);
 
-  // Sincroniza do Firestore antes de abrir
-  if (window.fbSyncOnBoot) {
-    showToast('Carregando dados...');
-    window.fbSyncOnBoot().then(() => {
+  // Traz a cópia local para a memória e sincroniza do Firestore antes de abrir
+  showToast('Carregando dados...');
+  hidratarCache()
+    .catch(() => {})
+    .then(() => window.fbSyncOnBoot ? window.fbSyncOnBoot() : null)
+    .catch(() => {})
+    .then(() => {
       currentUser = loadO(K.U);
       initDemo();
       bootApp();
-    }).catch(() => {
-      initDemo();
-      bootApp();
     });
-  } else {
-    initDemo();
-    bootApp();
-  }
 }
 
 function doLogout() {
@@ -3507,7 +3587,7 @@ function saveIaPerfil(clienteKey, data){
   all[clienteKey] = data;
   // K.IA guarda um objeto (não um array), então não passa pelo save() genérico —
   // gravamos local e enviamos ao Firestore manualmente, para sincronizar entre dispositivos.
-  guardarLocal(K.IA, all);
+  guardarGrande(K.IA, JSON.stringify(all));
   if (window.fbSaveCollection) {
     window.fbSaveCollection('ia_perfis', [{ id: clienteKey, ...data }]).catch(()=>{});
   }
@@ -4290,20 +4370,28 @@ function renderProdutosScreen(){
    Mostra quanto do espaço do navegador já foi usado. O limite fica
    perto de 5 MB e, ao ser atingido, o app parava de guardar dados
    neste aparelho sem dar nenhum sinal.                              */
-function renderArmazenamento(){
+async function renderArmazenamento(){
   const el = document.getElementById('card-armazenamento');
   if (!el) return;
-  const usado = bytesLocalStorage();
-  const limite = 5 * 1024 * 1024;
+  // Pergunta ao navegador quanto já foi usado do total disponível para o site
+  // (inclui o IndexedDB, onde as coleções passaram a ficar)
+  let usado = null, limite = null;
+  if (navigator.storage?.estimate){
+    try {
+      const e = await navigator.storage.estimate();
+      usado = e.usage; limite = e.quota;
+    } catch {}
+  }
+  if (!limite){ el.style.display = 'none'; return; }
   const pct = Math.min(100, Math.round(usado / limite * 100));
-  // só aparece quando começa a importar
   if (pct < 60){ el.style.display = 'none'; return; }
   const cor = pct >= 85 ? 'var(--danger)' : 'var(--warning)';
+  const mb = v => v >= 1073741824 ? (v/1073741824).toFixed(1)+' GB' : (v/1048576).toFixed(0)+' MB';
   el.style.display = 'block';
   el.innerHTML = `
     <div class="card-label">Armazenamento deste aparelho</div>
     <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px">
-      <span style="color:var(--text-mid)">${(usado/1048576).toFixed(1)} MB de ~5 MB</span>
+      <span style="color:var(--text-mid)">${mb(usado)} de ${mb(limite)}</span>
       <b style="color:${cor}">${pct}%</b>
     </div>
     <div style="height:8px;background:var(--border-light);border-radius:4px;overflow:hidden">
@@ -6173,11 +6261,11 @@ window.addEventListener('DOMContentLoaded', () => {
   if (session?.email) {
     // Já estava logado neste navegador — sincroniza e abre
     const doSync = () => {
-      if (window.fbSyncOnBoot) {
-        window.fbSyncOnBoot().then(() => { initDemo(); bootApp(); }).catch(() => { initDemo(); bootApp(); });
-      } else {
-        initDemo(); bootApp();
-      }
+      hidratarCache()
+        .catch(() => {})
+        .then(() => window.fbSyncOnBoot ? window.fbSyncOnBoot() : null)
+        .catch(() => {})
+        .then(() => { initDemo(); bootApp(); });
     };
     if (window.FB?.ready) { doSync(); }
     else {
