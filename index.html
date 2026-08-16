@@ -526,6 +526,42 @@ select.form-control {
   background: var(--blue-light);
   border-radius: 2px 0 0 2px;
 }
+/* ── VITRINE (gestão da loja Graça em Papel) ── */
+.vit-slots { display:flex; flex-wrap:wrap; gap:8px; }
+.vit-slot {
+  position:relative; width:74px; height:74px; border-radius:var(--r-sm);
+  border:1.5px dashed var(--border); overflow:hidden; background:var(--blue-pale);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.vit-slot img { width:100%; height:100%; object-fit:cover; }
+.vit-slot input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; }
+.vit-slot-add { font-size:11px; color:var(--blue-deep); text-align:center; line-height:1.3; pointer-events:none; }
+.vit-slot-rm {
+  position:absolute; top:2px; right:2px; width:19px; height:19px; border:none; cursor:pointer;
+  border-radius:50%; background:rgba(0,0,0,.55); color:#fff; font-size:11px; line-height:1; padding:0;
+}
+.vit-slot-capa {
+  position:absolute; bottom:0; left:0; right:0; background:rgba(122,155,181,.9);
+  color:#fff; font-size:8px; text-align:center; padding:2px 0; letter-spacing:.4px;
+}
+.vit-badge {
+  display:inline-block; font-size:10px; font-weight:700; padding:2px 7px;
+  border-radius:20px; letter-spacing:.3px;
+}
+.vit-badge.on  { background:var(--success); color:#fff; }
+.vit-badge.off { background:var(--border); color:var(--text-mid); }
+.vit-thumb { width:44px; height:44px; border-radius:var(--r-sm); object-fit:cover; flex-shrink:0; }
+.vit-thumb-ph {
+  width:44px; height:44px; border-radius:var(--r-sm); background:var(--blue-pale);
+  display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0;
+}
+.vit-row { display:flex; align-items:center; gap:11px; padding:10px 0; border-bottom:1px solid var(--border-light); }
+.vit-row:last-child { border-bottom:none; }
+.vit-chip {
+  display:inline-flex; align-items:center; gap:5px; background:var(--blue-pale);
+  border-radius:20px; padding:3px 5px 3px 11px; font-size:11px; color:var(--blue-deep);
+}
+.vit-chip button { border:none; background:none; cursor:pointer; color:var(--text-soft); font-size:12px; padding:0 3px; }
 .pedido-card.s-novo::before        { background: var(--blue); }
 .pedido-card.s-producao::before    { background: var(--warning); }
 .pedido-card.s-pronto::before      { background: var(--success); }
@@ -826,7 +862,7 @@ select.form-control {
 <!-- Firebase SDK (Firestore only, sem Auth) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, doc, getDocs, setDoc, deleteDoc }
+  import { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, updateDoc, deleteDoc }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -856,6 +892,33 @@ select.form-control {
   window.fbLoadCollection = async function(colName) {
     const snap = await getDocs(collection(db, colName));
     return snap.docs.map(d => d.data());
+  };
+
+  /* ── VITRINE (loja Graça em Papel) ───────────────────────────────
+     A Central é a fonte da verdade. Estas funções escrevem nas coleções
+     que o app da loja (graça em papel) lê em tempo real:
+       products / categories / faqs / gallery / config-settings          */
+  window.fbLoadCollectionWithIds = async function(colName) {
+    const snap = await getDocs(collection(db, colName));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  };
+
+  window.fbSetDocById = async function(colName, id, data) {
+    await setDoc(doc(db, colName, String(id)), data, { merge: true });
+  };
+
+  window.fbAddDocTo = async function(colName, data) {
+    const ref = await addDoc(collection(db, colName), data);
+    return ref.id;
+  };
+
+  window.fbUpdateDocById = async function(colName, id, data) {
+    await updateDoc(doc(db, colName, String(id)), data);
+  };
+
+  window.fbGetDocById = async function(colName, id) {
+    const snap = await getDoc(doc(db, colName, String(id)));
+    return snap.exists() ? { id: snap.id, ...snap.data() } : null;
   };
 
   window.fbSyncOnBoot = async function() {
@@ -1058,6 +1121,18 @@ select.form-control {
       <div id="produtos-content"></div>
     </div>
 
+    <!-- VITRINE (alimenta o app Graça em Papel) -->
+    <div class="screen" id="screen-vitrine">
+      <div class="tabs">
+        <button class="tab active" data-tab="produtos" onclick="setVitrineTab(this)">Produtos</button>
+        <button class="tab" data-tab="categorias" onclick="setVitrineTab(this)">Categorias</button>
+        <button class="tab" data-tab="galeria" onclick="setVitrineTab(this)">Galeria</button>
+        <button class="tab" data-tab="faq" onclick="setVitrineTab(this)">FAQ</button>
+        <button class="tab" data-tab="loja" onclick="setVitrineTab(this)">Loja</button>
+      </div>
+      <div id="vitrine-content"></div>
+    </div>
+
     <!-- ESTOQUE -->
     <div class="screen" id="screen-estoque">
       <div class="tabs">
@@ -1224,6 +1299,10 @@ select.form-control {
   <button class="nav-item" data-screen="produtos" onclick="navigate('produtos')">
     <svg viewBox="0 0 24 24"><path d="M20.59 13.41 13.42 20.6a2 2 0 0 1-2.83 0L2 12.01V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
     <span>Produtos</span>
+  </button>
+  <button class="nav-item" data-screen="vitrine" onclick="navigate('vitrine')">
+    <svg viewBox="0 0 24 24"><path d="M3 9h18"/><path d="M5 9V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4"/><path d="M4 9h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M9 13h6"/></svg>
+    <span>Vitrine</span>
   </button>
   <button class="nav-item" data-screen="estoque" onclick="navigate('estoque')">
     <svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
@@ -1590,6 +1669,35 @@ select.form-control {
       <input type="number" class="form-control" id="pr-preco" placeholder="0,00" step="0.01" oninput="renderComposicaoResumo()">
     </div>
 
+    <!-- ── VITRINE: o que aparece no app Graça em Papel ── -->
+    <div style="background:var(--blue-pale);border-radius:var(--r-sm);padding:14px 16px;margin-bottom:18px">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+        <input type="checkbox" id="pr-vitrine" style="margin-top:2px;width:17px;height:17px;flex-shrink:0" onchange="onVitrineToggle()">
+        <span>
+          <span style="font-size:13px;font-weight:700;color:var(--blue-deep);display:block">🛍️ Exibir na loja (Graça em Papel)</span>
+          <span style="font-size:11px;color:var(--text-mid);display:block;margin-top:2px">
+            Quando marcado, o produto aparece no app da loja para os clientes. Só é exibido se o status também estiver <b>Ativo</b>.
+          </span>
+        </span>
+      </label>
+
+      <div id="pr-vitrine-campos" style="display:none;margin-top:14px">
+        <div class="form-group">
+          <label class="form-label">Subcategoria na loja (opcional)</label>
+          <input type="text" class="form-control" id="pr-subcategoria" placeholder="Ex: 32mm, Infantil, Natal...">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Fotos do produto (até 6 — a primeira é a capa)</label>
+          <div class="vit-slots" id="pr-fotos-slots"></div>
+          <div style="display:flex;gap:6px;margin-top:8px">
+            <input type="text" class="form-control" id="pr-foto-url" placeholder="Ou cole o link de uma imagem" style="flex:1">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="addProdutoFotoUrl()">+</button>
+          </div>
+          <div style="font-size:11px;color:var(--text-soft);margin-top:6px">A loja precisa de pelo menos 1 foto para exibir o produto.</div>
+        </div>
+      </div>
+    </div>
+
     <div class="form-group">
       <label class="form-label">Composição (materiais utilizados na produção)</label>
       <div id="pr-comp-list" style="margin-bottom:10px"></div>
@@ -1732,6 +1840,27 @@ select.form-control {
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-estoque-entrada')">Cancelar</button>
       <button class="btn btn-success" onclick="saveEstoqueEntrada()">Registrar entrada</button>
+    </div>
+  </div>
+</div>
+
+<!-- FAQ DA LOJA (vitrine Graça em Papel) -->
+<div class="modal-overlay" id="modal-vitrine-faq">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-vitrine-faq-title">Nova pergunta</div>
+    <input type="hidden" id="vit-faq-id">
+    <div class="form-group">
+      <label class="form-label">Pergunta *</label>
+      <input type="text" class="form-control" id="vit-faq-pergunta" placeholder="Ex: Qual o prazo de produção?">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Resposta *</label>
+      <textarea class="form-control" id="vit-faq-resposta" style="min-height:120px" placeholder="Digite a resposta que o cliente verá..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-vitrine-faq')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarFaqVitrine()">Salvar</button>
     </div>
   </div>
 </div>
@@ -2097,6 +2226,9 @@ let calDate = new Date();
 let pedidosMesesExpandido = new Set();     // meses (YYYY-MM) atualmente expandidos na tela de Pedidos
 let pedidosMesesInicializado = new Set();  // controla quais meses já receberam o estado "expandido" padrão
 let composicaoAtual = [];   // materiais do produto sendo editado: {matId, qtd}
+let fotosProdutoAtual = []; // URLs das fotos do produto sendo editado (vitrine da loja)
+const MAX_FOTOS_PRODUTO = 6;
+let vitrineTab = 'produtos';
 let itensPedidoAtual = [];  // itens de catálogo do pedido sendo editado: {produtoId, produtoNome, qtd, precoUnit}
 let desperdicioAtual = [];  // materiais desperdiçados ao concluir o pedido: {matId, qtd}
 
@@ -2187,7 +2319,7 @@ function showForgot() {
 }
 
 /* ── NAVIGATION ──────────────────────────────────── */
-const screenTitles = { dashboard:null, pedidos:'Pedidos', agenda:'Agenda', financeiro:'Financeiro', vendas:'Vendas', produtos:'Produtos', estoque:'Estoque', clientes:'Clientes', ia:'Área IA', assistente:'Assistente', config:'Configurações' };
+const screenTitles = { dashboard:null, pedidos:'Pedidos', agenda:'Agenda', financeiro:'Financeiro', vendas:'Vendas', produtos:'Produtos', vitrine:'Vitrine da Loja', estoque:'Estoque', clientes:'Clientes', ia:'Área IA', assistente:'Assistente', config:'Configurações' };
 
 function navigate(s, param) {
   currentScreen = s;
@@ -2217,6 +2349,7 @@ function navigate(s, param) {
   if (s==='financeiro')  renderFinanceiro();
   if (s==='vendas')      renderVendas();
   if (s==='produtos')    renderProdutosScreen();
+  if (s==='vitrine')     renderVitrineScreen();
   if (s==='estoque')     renderEstoqueScreen();
   if (s==='clientes')    renderClientes();
   if (s==='ia')          renderIaScreen();
@@ -3774,6 +3907,18 @@ function compressImage(file, quality=0.9, maxSize=1200) {
   });
 }
 
+// Envia uma imagem para o Cloudinary e devolve a URL — usado pela vitrine
+async function uploadImagemCloudinary(file, maxSize = 1200, quality = 0.85) {
+  const compressed = await compressImage(file, quality, maxSize);
+  const fd = new FormData();
+  fd.append('file', compressed, 'foto.jpg');
+  fd.append('upload_preset', 'graca-em-papel');
+  const res = await fetch('https://api.cloudinary.com/v1_1/dl1vymhde/image/upload', { method:'POST', body:fd });
+  const data = await res.json();
+  if (!data.secure_url) throw new Error('Falha no upload da imagem');
+  return data.secure_url;
+}
+
 async function uploadFotoCloudinary(input) {
   const file = input.files[0];
   if (!file) return;
@@ -4033,6 +4178,412 @@ function renderProdutosScreen(){
   el.innerHTML = prods.length ? prods.map(p=>produtoCardHTML(p)).join('') : emptyHTML('Nenhum produto cadastrado.<br><strong>Toque no + para adicionar.</strong>');
 }
 
+/* ════════════════════════════════════════════════════════════════
+   TELA VITRINE — tudo que o cliente vê no app Graça em Papel
+════════════════════════════════════════════════════════════════ */
+window._vitrine = { categories:[], faqs:[], gallery:[], config:{}, carregado:false, erro:false };
+
+function setVitrineTab(el){
+  document.querySelectorAll('#screen-vitrine .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  vitrineTab = el.dataset.tab;
+  renderVitrineContent();
+}
+
+function renderVitrineScreen(){
+  renderVitrineContent();
+  carregarDadosVitrine();
+}
+
+// Busca no Firestore o que a loja exibe hoje (categorias, FAQ, galeria, contato)
+async function carregarDadosVitrine(){
+  if (!window.fbLoadCollectionWithIds) return;
+  try {
+    const [cats, faqs, gal, cfg] = await Promise.all([
+      window.fbLoadCollectionWithIds('categories'),
+      window.fbLoadCollectionWithIds('faqs'),
+      window.fbLoadCollectionWithIds('gallery'),
+      window.fbGetDocById('config','settings')
+    ]);
+    window._vitrine = {
+      categories: cats.sort((a,b)=>(a.order||0)-(b.order||0)||(a.name||'').localeCompare(b.name||'')),
+      faqs:       faqs.sort((a,b)=>(a.order||0)-(b.order||0)),
+      gallery:    gal.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)),
+      config:     cfg || {},
+      carregado:  true,
+      erro:       false
+    };
+    if (currentScreen === 'vitrine') renderVitrineContent();
+  } catch(e){
+    window._vitrine.erro = true;
+    showToast('Não foi possível carregar os dados da loja.');
+    if (currentScreen === 'vitrine') renderVitrineContent();
+  }
+}
+
+// Mostrado no lugar do conteúdo enquanto os dados da loja não chegam
+function vitrineCarregandoHTML(oQue){
+  if (window._vitrine.erro){
+    return vitrineAviso(`Não foi possível carregar ${oQue} da loja. Verifique sua conexão.`)
+      + `<button class="btn btn-ghost" style="width:100%" onclick="carregarDadosVitrine()">Tentar de novo</button>`;
+  }
+  return vitrineAviso(`Carregando ${oQue} da loja...`);
+}
+
+function renderVitrineContent(){
+  const el = document.getElementById('vitrine-content');
+  if (!el) return;
+  if (vitrineTab === 'produtos')        el.innerHTML = vitrineProdutosHTML();
+  else if (vitrineTab === 'categorias') el.innerHTML = vitrineCategoriasHTML();
+  else if (vitrineTab === 'galeria')    el.innerHTML = vitrineGaleriaHTML();
+  else if (vitrineTab === 'faq')        el.innerHTML = vitrineFaqHTML();
+  else                                  el.innerHTML = vitrineLojaHTML();
+}
+
+// Escapa texto usado dentro de atributos HTML (aspas quebrariam o campo)
+function escAttr(v){
+  return String(v||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function vitrineAviso(texto){
+  return `<div class="card" style="background:var(--blue-pale);border:none;box-shadow:none;margin-bottom:14px">
+    <div style="font-size:12.5px;color:var(--text-mid);line-height:1.6">${texto}</div>
+  </div>`;
+}
+
+/* ── Aba: Produtos na loja ── */
+function vitrineProdutosHTML(){
+  const prods = load(K.PR);
+  const naLoja = prods.filter(p=>p.vitrine);
+  const fora   = prods.filter(p=>!p.vitrine);
+
+  const linha = p => {
+    const foto = (p.fotos||[])[0];
+    const visivel = p.vitrine && p.status !== 'Inativo';
+    return `<div class="vit-row">
+      ${foto ? `<img class="vit-thumb" src="${foto}" alt="">` : '<div class="vit-thumb-ph">🎀</div>'}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13.5px;font-weight:600;color:var(--text-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nome}</div>
+        <div style="font-size:11.5px;color:var(--text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.categoria||'sem categoria'}${p.subcategoria?' · '+p.subcategoria:''} · ${fmtM(p.preco)}</div>
+        ${p.vitrine && !visivel ? '<div style="font-size:11px;color:var(--danger);margin-top:2px">Status Inativo — oculto na loja</div>' : ''}
+        ${p.vitrine && !(p.fotos||[]).length ? '<div style="font-size:11px;color:var(--danger);margin-top:2px">Sem foto — adicione uma imagem</div>' : ''}
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="openProdutoById('${p.id}')">Editar</button>
+      <button class="btn ${p.vitrine?'btn-ghost':'btn-rose'} btn-sm" onclick="toggleVitrineProduto('${p.id}')">${p.vitrine?'Tirar':'Exibir'}</button>
+    </div>`;
+  };
+
+  return vitrineAviso(
+    'Tudo é cadastrado aqui na Central. Marque <b>Exibir na loja</b> em um produto e ele aparece no app <b>Graça em Papel</b> para os clientes na mesma hora.'
+  )
+  + `<div class="card">
+      <div class="card-label" style="margin-bottom:6px">🛍️ Na loja (${naLoja.length})</div>
+      ${naLoja.length ? naLoja.map(linha).join('') : '<div style="font-size:12.5px;color:var(--text-soft);padding:6px 0">Nenhum produto publicado ainda.</div>'}
+    </div>
+    <div class="card">
+      <div class="card-label" style="margin-bottom:6px">Fora da loja (${fora.length})</div>
+      ${fora.length ? fora.map(linha).join('') : '<div style="font-size:12.5px;color:var(--text-soft);padding:6px 0">Todos os produtos do catálogo estão publicados.</div>'}
+    </div>
+    <button class="btn btn-ghost" style="width:100%;margin-top:4px" onclick="importarProdutosDaLoja()">⬇ Importar produtos que já estavam na loja</button>
+    <div style="font-size:11px;color:var(--text-soft);text-align:center;margin-top:6px">
+      Use uma vez para trazer para a Central os produtos cadastrados no app antigo.
+    </div>`;
+}
+
+// Traz para o catálogo da Central os produtos que só existem na loja
+async function importarProdutosDaLoja(){
+  if (!window.fbLoadCollectionWithIds) { showToast('Sem conexão com o Firestore.'); return; }
+  showToast('Buscando produtos na loja...');
+  try {
+    const remotos = await window.fbLoadCollectionWithIds('products');
+    const prs = load(K.PR);
+    const existentes = new Set(prs.map(p=>String(p.id)));
+    const novos = remotos.filter(r => !existentes.has(String(r.id)));
+    if (!novos.length){ showToast('Nenhum produto novo para importar.'); return; }
+    if (!confirm(`Importar ${novos.length} produto(s) da loja para o catálogo da Central?`)) return;
+    novos.forEach(r=>{
+      const fotos = Array.isArray(r.images) && r.images.length ? r.images : (r.image ? [r.image] : []);
+      prs.push({
+        id: r.id,
+        nome: r.name || 'Produto sem nome',
+        categoria: r.category || '',
+        status: r.active === false ? 'Inativo' : 'Ativo',
+        descricao: r.description || '',
+        preco: Number(r.price) || 0,
+        composicao: [],
+        custoEstimado: 0,
+        margem: Number(r.price) || 0,
+        vitrine: true,
+        subcategoria: r.subcategory || '',
+        fotos,
+        publicadoEm: r.createdAt || Date.now()
+      });
+    });
+    save(K.PR, prs);
+    renderVitrineContent();
+    renderProdutosScreen();
+    showToast(`${novos.length} produto(s) importado(s). Revise custo e composição de cada um.`);
+  } catch(e){
+    showToast('Erro ao importar produtos da loja.');
+  }
+}
+
+/* ── Aba: Categorias da loja ── */
+function vitrineCategoriasHTML(){
+  const { categories, carregado } = window._vitrine;
+  if (!carregado) return vitrineCarregandoHTML('as categorias');
+  const prods = load(K.PR).filter(p=>p.vitrine);
+  const blocos = categories.map(c=>{
+    const qtd = prods.filter(p=>p.categoria===c.name).length;
+    const chips = (c.subcategories||[]).map(s=>`
+      <span class="vit-chip">${s}<button onclick="removerSubcategoriaVitrine('${c.id}','${String(s).replace(/'/g,"\\'")}')" title="Remover">✕</button></span>`).join('');
+    return `<div class="card">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:600;color:var(--text-dark)">${c.name}</div>
+          <div style="font-size:11.5px;color:var(--text-soft)">${qtd} produto(s) na loja</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="renomearCategoriaVitrine('${c.id}','${String(c.name).replace(/'/g,"\\'")}')">Renomear</button>
+        <button class="btn btn-ghost btn-sm" onclick="excluirCategoriaVitrine('${c.id}','${String(c.name).replace(/'/g,"\\'")}')">Excluir</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center">
+        ${chips || '<span style="font-size:11.5px;color:var(--text-soft);font-style:italic">Sem subcategorias</span>'}
+        <button class="btn btn-ghost btn-sm" onclick="addSubcategoriaVitrine('${c.id}')">+ Subcategoria</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  return vitrineAviso('As categorias organizam a página inicial da loja. Ao publicar um produto, a categoria dele é criada aqui automaticamente.')
+    + (blocos || emptyHTML('Nenhuma categoria na loja ainda.'))
+    + `<button class="btn btn-primary" style="width:100%;margin-top:10px" onclick="addCategoriaVitrine()">+ Nova categoria</button>`;
+}
+
+async function addCategoriaVitrine(){
+  const nome = prompt('Nome da nova categoria:');
+  if (!nome || !nome.trim()) return;
+  const limpo = nome.trim();
+  if (window._vitrine.categories.some(c=>(c.name||'').toLowerCase()===limpo.toLowerCase())){
+    showToast('Essa categoria já existe.'); return;
+  }
+  try {
+    await window.fbAddDocTo('categories', { name:limpo, subcategories:[], order:Date.now() });
+    showToast('Categoria criada.');
+    carregarDadosVitrine();
+  } catch(e){ showToast('Erro ao criar a categoria.'); }
+}
+
+async function renomearCategoriaVitrine(id, nomeAtual){
+  const novo = prompt(`Novo nome para "${nomeAtual}":`, nomeAtual);
+  if (!novo || !novo.trim() || novo.trim()===nomeAtual) return;
+  const limpo = novo.trim();
+  try {
+    await window.fbUpdateDocById('categories', id, { name:limpo });
+    // Renomeia também nos produtos da Central e nos espelhos da loja
+    const prs = load(K.PR);
+    const afetados = prs.filter(p=>p.categoria===nomeAtual);
+    afetados.forEach(p=>{ p.categoria = limpo; });
+    if (afetados.length) save(K.PR, prs);
+    for (const p of afetados.filter(p=>p.vitrine)){
+      await window.fbUpdateDocById('products', p.id, { category: limpo });
+    }
+    showToast('Categoria renomeada.');
+    carregarDadosVitrine();
+    renderProdutosScreen();
+  } catch(e){ showToast('Erro ao renomear a categoria.'); }
+}
+
+async function excluirCategoriaVitrine(id, nome){
+  const qtd = load(K.PR).filter(p=>p.vitrine && p.categoria===nome).length;
+  const msg = qtd
+    ? `Excluir a categoria "${nome}"? ${qtd} produto(s) da loja ficarão sem categoria na página inicial.`
+    : `Excluir a categoria "${nome}"?`;
+  if (!confirm(msg)) return;
+  try {
+    await window.fbDeleteDoc('categories', id);
+    showToast('Categoria removida da loja.');
+    carregarDadosVitrine();
+  } catch(e){ showToast('Erro ao remover a categoria.'); }
+}
+
+async function addSubcategoriaVitrine(catId){
+  const cat = window._vitrine.categories.find(c=>c.id===catId);
+  if (!cat) return;
+  const nome = prompt(`Nova subcategoria em "${cat.name}":`);
+  if (!nome || !nome.trim()) return;
+  const limpo = nome.trim();
+  if ((cat.subcategories||[]).includes(limpo)){ showToast('Essa subcategoria já existe.'); return; }
+  try {
+    await window.fbUpdateDocById('categories', catId, { subcategories:[...(cat.subcategories||[]), limpo] });
+    showToast('Subcategoria adicionada.');
+    carregarDadosVitrine();
+  } catch(e){ showToast('Erro ao adicionar a subcategoria.'); }
+}
+
+async function removerSubcategoriaVitrine(catId, sub){
+  const cat = window._vitrine.categories.find(c=>c.id===catId);
+  if (!cat || !confirm(`Remover a subcategoria "${sub}"?`)) return;
+  try {
+    await window.fbUpdateDocById('categories', catId, {
+      subcategories: (cat.subcategories||[]).filter(s=>s!==sub)
+    });
+    showToast('Subcategoria removida.');
+    carregarDadosVitrine();
+  } catch(e){ showToast('Erro ao remover a subcategoria.'); }
+}
+
+/* ── Aba: Galeria de clientes ── */
+function vitrineGaleriaHTML(){
+  const { gallery, carregado } = window._vitrine;
+  if (!carregado) return vitrineCarregandoHTML('a galeria');
+  const itens = gallery.map(g=>`
+    <div class="vit-row">
+      <img class="vit-thumb" src="${g.image}" alt="">
+      <div style="flex:1;min-width:0;font-size:12.5px;color:var(--text-mid)">${g.caption||'<i style="color:var(--text-soft)">sem legenda</i>'}</div>
+      <button class="btn btn-ghost btn-sm" onclick="excluirFotoGaleria('${g.id}')">Excluir</button>
+    </div>`).join('');
+
+  return vitrineAviso('Fotos que aparecem na seção <b>Nossos Clientes</b> da loja.')
+    + `<div class="card">
+        ${itens || '<div style="font-size:12.5px;color:var(--text-soft);padding:6px 0">Nenhuma foto na galeria.</div>'}
+      </div>
+      <div class="card">
+        <div class="card-label" style="margin-bottom:10px">Adicionar foto</div>
+        <div class="form-group">
+          <label class="form-label">Foto</label>
+          <input type="file" class="form-control" id="vit-gal-file" accept="image/*">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Legenda (opcional)</label>
+          <input type="text" class="form-control" id="vit-gal-caption" placeholder="Ex: Bottons na mochila da cliente!">
+        </div>
+        <button class="btn btn-primary" style="width:100%" onclick="salvarFotoGaleria(this)">Adicionar à galeria</button>
+      </div>`;
+}
+
+async function salvarFotoGaleria(btn){
+  const input = document.getElementById('vit-gal-file');
+  const file = input?.files?.[0];
+  if (!file){ showToast('Escolha uma foto.'); return; }
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  try {
+    const url = await uploadImagemCloudinary(file, 1000, 0.8);
+    await window.fbAddDocTo('gallery', {
+      image: url,
+      caption: document.getElementById('vit-gal-caption').value.trim(),
+      createdAt: Date.now()
+    });
+    showToast('Foto adicionada à galeria.');
+    await carregarDadosVitrine();
+  } catch(e){
+    showToast('Erro ao enviar a foto.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Adicionar à galeria';
+  }
+}
+
+async function excluirFotoGaleria(id){
+  if (!confirm('Remover esta foto da galeria?')) return;
+  try {
+    await window.fbDeleteDoc('gallery', id);
+    showToast('Foto removida.');
+    carregarDadosVitrine();
+  } catch(e){ showToast('Erro ao remover a foto.'); }
+}
+
+/* ── Aba: FAQ ── */
+function vitrineFaqHTML(){
+  const { faqs, carregado } = window._vitrine;
+  if (!carregado) return vitrineCarregandoHTML('as perguntas');
+  const itens = faqs.map(f=>`
+    <div style="padding:11px 0;border-bottom:1px solid var(--border-light)">
+      <div style="font-size:13.5px;font-weight:600;color:var(--text-dark)">${f.question||''}</div>
+      <div style="font-size:12.5px;color:var(--text-mid);line-height:1.6;margin-top:4px">${f.answer||''}</div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button class="btn btn-ghost btn-sm" onclick="editarFaqVitrine('${f.id}')">Editar</button>
+        <button class="btn btn-ghost btn-sm" onclick="excluirFaqVitrine('${f.id}')">Excluir</button>
+      </div>
+    </div>`).join('');
+
+  return vitrineAviso('Perguntas frequentes exibidas no rodapé da loja.')
+    + `<div class="card">${itens || '<div style="font-size:12.5px;color:var(--text-soft)">Nenhuma pergunta cadastrada.</div>'}</div>
+       <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="novaFaqVitrine()">+ Nova pergunta</button>`;
+}
+
+function novaFaqVitrine(){ abrirFaqVitrineModal(null); }
+function editarFaqVitrine(id){
+  const f = window._vitrine.faqs.find(x=>x.id===id);
+  if (f) abrirFaqVitrineModal(f);
+}
+
+function abrirFaqVitrineModal(f){
+  document.getElementById('vit-faq-id').value       = f?.id || '';
+  document.getElementById('vit-faq-pergunta').value = f?.question || '';
+  document.getElementById('vit-faq-resposta').value = f?.answer || '';
+  document.getElementById('modal-vitrine-faq-title').textContent = f ? 'Editar pergunta' : 'Nova pergunta';
+  openModal('modal-vitrine-faq');
+}
+
+async function salvarFaqVitrine(){
+  const id = document.getElementById('vit-faq-id').value;
+  const question = document.getElementById('vit-faq-pergunta').value.trim();
+  const answer   = document.getElementById('vit-faq-resposta').value.trim();
+  if (!question || !answer){ showToast('Preencha a pergunta e a resposta.'); return; }
+  try {
+    if (id) await window.fbUpdateDocById('faqs', id, { question, answer });
+    else    await window.fbAddDocTo('faqs', { question, answer, order: Date.now() });
+    closeModal('modal-vitrine-faq');
+    showToast('Pergunta salva.');
+    carregarDadosVitrine();
+  } catch(e){ showToast('Erro ao salvar a pergunta.'); }
+}
+
+async function excluirFaqVitrine(id){
+  if (!confirm('Remover esta pergunta?')) return;
+  try {
+    await window.fbDeleteDoc('faqs', id);
+    showToast('Pergunta removida.');
+    carregarDadosVitrine();
+  } catch(e){ showToast('Erro ao remover a pergunta.'); }
+}
+
+/* ── Aba: Dados da loja (contato e texto Sobre) ── */
+function vitrineLojaHTML(){
+  const { config, carregado } = window._vitrine;
+  if (!carregado) return vitrineCarregandoHTML('os dados');
+  return vitrineAviso('Contato e apresentação exibidos no app da loja.')
+    + `<div class="card">
+        <div class="form-group">
+          <label class="form-label">WhatsApp (com DDI e DDD, só números)</label>
+          <input type="text" class="form-control" id="vit-cfg-wa" value="${escAttr(config.whatsapp)}" placeholder="5511999999999">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Link do Instagram</label>
+          <input type="text" class="form-control" id="vit-cfg-ig" value="${escAttr(config.instagram)}" placeholder="https://instagram.com/gracaempapel">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Texto "Sobre a loja"</label>
+          <textarea class="form-control" id="vit-cfg-sobre" style="min-height:120px" placeholder="Conte a história da marca...">${config.sobre||''}</textarea>
+        </div>
+        <button class="btn btn-primary" style="width:100%" onclick="salvarConfigVitrine(this)">Salvar dados da loja</button>
+      </div>`;
+}
+
+async function salvarConfigVitrine(btn){
+  const whatsapp  = document.getElementById('vit-cfg-wa').value.replace(/\D/g,'');
+  const instagram = document.getElementById('vit-cfg-ig').value.trim();
+  const sobre     = document.getElementById('vit-cfg-sobre').value.trim();
+  btn.disabled = true; btn.textContent = 'Salvando...';
+  try {
+    await window.fbSetDocById('config','settings',{ whatsapp, instagram, sobre });
+    window._vitrine.config = { whatsapp, instagram, sobre };
+    showToast('Dados da loja atualizados.');
+  } catch(e){
+    showToast('Erro ao salvar os dados da loja.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Salvar dados da loja';
+  }
+}
+
 /* ── ESTOQUE (materiais + relatório) ─────────────── */
 function renderEstoqueScreen(){ renderEstoqueContent(estoqueTab); }
 
@@ -4159,6 +4710,7 @@ function produtoCardHTML(p){
       <span class="badge ${ativo?'badge-pronto':'badge-cancelado'}">${ativo?'Ativo':'Inativo'}</span>
     </div>
     <div class="pedido-meta">
+      <span class="vit-badge ${p.vitrine&&ativo?'on':'off'}">${p.vitrine?(ativo?'🛍️ Na loja':'🛍️ Oculto (inativo)'):'Fora da loja'}</span>
       <span class="pedido-meta-item">Venda: ${fmtM(p.preco)}</span>
       <span class="pedido-meta-item">Custo: ${fmtM(custo)}</span>
       <span class="pedido-meta-item" style="color:${margem>=0?'var(--success)':'var(--danger)'};font-weight:600">Margem: ${fmtM(margem)}</span>
@@ -4247,11 +4799,70 @@ function openProdutoModal(p=null){
   document.getElementById('pr-status').value    = p?.status || 'Ativo';
   document.getElementById('pr-desc').value      = p?.descricao || '';
   document.getElementById('pr-preco').value     = p?.preco || '';
+  // Vitrine
+  document.getElementById('pr-vitrine').checked      = !!p?.vitrine;
+  document.getElementById('pr-subcategoria').value   = p?.subcategoria || '';
+  document.getElementById('pr-foto-url').value       = '';
+  fotosProdutoAtual = Array.isArray(p?.fotos) ? [...p.fotos] : [];
+  renderProdutoFotos();
+  onVitrineToggle();
   composicaoAtual = p?.composicao ? JSON.parse(JSON.stringify(p.composicao)) : [];
   populateMaterialSelect();
   renderComposicaoList();
   openModal('modal-produto');
 }
+
+/* ── Fotos do produto (enviadas para a vitrine da loja) ── */
+function onVitrineToggle(){
+  const on = document.getElementById('pr-vitrine').checked;
+  document.getElementById('pr-vitrine-campos').style.display = on ? 'block' : 'none';
+}
+
+function renderProdutoFotos(){
+  const wrap = document.getElementById('pr-fotos-slots');
+  if (!wrap) return;
+  let h = fotosProdutoAtual.map((src,i)=>`
+    <div class="vit-slot" style="border-style:solid">
+      <img src="${src}" alt="">
+      ${i===0?'<span class="vit-slot-capa">CAPA</span>':''}
+      <button type="button" class="vit-slot-rm" onclick="removeProdutoFoto(${i})" title="Remover">✕</button>
+    </div>`).join('');
+  if (fotosProdutoAtual.length < MAX_FOTOS_PRODUTO){
+    h += `<div class="vit-slot">
+      <span class="vit-slot-add">+<br>Foto</span>
+      <input type="file" accept="image/*" onchange="addProdutoFotoArquivo(event)">
+    </div>`;
+  }
+  wrap.innerHTML = h;
+}
+
+async function addProdutoFotoArquivo(e){
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  if (fotosProdutoAtual.length >= MAX_FOTOS_PRODUTO){ showToast(`Máximo de ${MAX_FOTOS_PRODUTO} fotos.`); return; }
+  showToast('Enviando foto...');
+  try {
+    const url = await uploadImagemCloudinary(file);
+    fotosProdutoAtual.push(url);
+    renderProdutoFotos();
+    showToast('Foto enviada!');
+  } catch(err){
+    showToast('Erro ao enviar a foto. Tente novamente.');
+  }
+}
+
+function addProdutoFotoUrl(){
+  const inp = document.getElementById('pr-foto-url');
+  const url = inp.value.trim();
+  if (!url){ showToast('Cole o link de uma imagem'); return; }
+  if (fotosProdutoAtual.length >= MAX_FOTOS_PRODUTO){ showToast(`Máximo de ${MAX_FOTOS_PRODUTO} fotos.`); return; }
+  fotosProdutoAtual.push(url);
+  inp.value = '';
+  renderProdutoFotos();
+}
+
+function removeProdutoFoto(i){ fotosProdutoAtual.splice(i,1); renderProdutoFotos(); }
 
 function populateMaterialSelect(){
   const mats = load(K.M);
@@ -4321,8 +4932,14 @@ function saveProduto(){
   const nome  = document.getElementById('pr-nome').value.trim();
   const preco = parseFloat(document.getElementById('pr-preco').value)||0;
   if (!nome){ showToast('Informe o nome do produto'); return; }
+  const vitrine = document.getElementById('pr-vitrine').checked;
+  if (vitrine && !fotosProdutoAtual.length){
+    showToast('Adicione pelo menos 1 foto para exibir o produto na loja');
+    return;
+  }
   const id = document.getElementById('pr-id').value || 'pr'+Date.now();
   const custo = custoComposicao(composicaoAtual);
+  const anterior = load(K.PR).find(p=>p.id===id);
   const obj = {
     id, nome,
     categoria:  document.getElementById('pr-categoria').value.trim(),
@@ -4331,7 +4948,12 @@ function saveProduto(){
     preco,
     composicao: composicaoAtual,
     custoEstimado: custo,
-    margem: preco-custo
+    margem: preco-custo,
+    // vitrine da loja Graça em Papel
+    vitrine,
+    subcategoria: document.getElementById('pr-subcategoria').value.trim(),
+    fotos: [...fotosProdutoAtual],
+    publicadoEm: anterior?.publicadoEm || Date.now()
   };
   const prs = load(K.PR);
   const idx = prs.findIndex(p=>p.id===id);
@@ -4340,14 +4962,95 @@ function saveProduto(){
   closeModal('modal-produto');
   renderProdutosScreen();
   showToast('Produto salvo.');
+  // Espelha o produto na loja (ou o remove de lá, se desmarcado)
+  sincronizarProdutoVitrine(obj);
 }
 
 function deleteProduto(id){
-  if (!confirm('Excluir este produto?')) return;
+  if (!confirm('Excluir este produto? Ele também sai da loja Graça em Papel.')) return;
   fbDel('produtos_catalogo', id);
+  fbDel('products', id); // remove da vitrine da loja
   save(K.PR, load(K.PR).filter(p=>p.id!==id));
   renderProdutosScreen();
+  if (currentScreen === 'vitrine') renderVitrineScreen();
   showToast('Produto excluído.');
+}
+
+/* ════════════════════════════════════════════════════════════════
+   VITRINE — espelha o catálogo da Central no app Graça em Papel
+   A loja lê a coleção `products` do Firestore. A Central é a única
+   que escreve nela: o mesmo id vale nas duas coleções.
+════════════════════════════════════════════════════════════════ */
+
+// Monta o documento no formato que o app da loja espera
+function produtoParaVitrine(p){
+  const fotos = Array.isArray(p.fotos) ? p.fotos.filter(Boolean) : [];
+  return {
+    name:        p.nome || '',
+    description: p.descricao || '',
+    price:       Number(p.preco) || 0,
+    category:    p.categoria || '',
+    subcategory: p.subcategoria || '',
+    images:      fotos,
+    image:       fotos[0] || '',
+    createdAt:   p.publicadoEm || Date.now(),
+    // visível na loja apenas se marcado para a vitrine E com status Ativo
+    active:      !!p.vitrine && p.status !== 'Inativo',
+    origem:      'central'
+  };
+}
+
+async function sincronizarProdutoVitrine(p){
+  if (!window.fbSetDocById) return;
+  try {
+    if (p.vitrine){
+      await window.fbSetDocById('products', p.id, produtoParaVitrine(p));
+      await garantirCategoriaVitrine(p.categoria, p.subcategoria);
+      showToast(p.status === 'Inativo'
+        ? 'Salvo. Produto está Inativo, então continua oculto na loja.'
+        : '✓ Produto publicado na loja Graça em Papel');
+    } else if (window.fbDeleteDoc){
+      await window.fbDeleteDoc('products', p.id);
+    }
+  } catch(e){
+    showToast('Produto salvo, mas houve erro ao sincronizar com a loja.');
+  }
+}
+
+// Publica/despublica direto da listagem, sem abrir o produto
+async function toggleVitrineProduto(id){
+  const prs = load(K.PR);
+  const p = prs.find(x=>x.id===id);
+  if (!p) return;
+  if (!p.vitrine && !(p.fotos||[]).length){
+    showToast('Adicione uma foto ao produto antes de exibi-lo na loja');
+    openProdutoModal(p);
+    return;
+  }
+  p.vitrine = !p.vitrine;
+  if (p.vitrine && !p.publicadoEm) p.publicadoEm = Date.now();
+  save(K.PR, prs);
+  renderVitrineScreen();
+  renderProdutosScreen();
+  await sincronizarProdutoVitrine(p);
+  if (!p.vitrine) showToast('Produto removido da loja.');
+}
+
+// Garante que a categoria (e a subcategoria) existam na loja, senão os
+// produtos publicados ficariam fora das vitrines por categoria da home
+async function garantirCategoriaVitrine(nome, subcategoria){
+  if (!nome || !window.fbLoadCollectionWithIds) return;
+  const cats = await window.fbLoadCollectionWithIds('categories');
+  let cat = cats.find(c => (c.name||'').toLowerCase() === nome.toLowerCase());
+  if (!cat){
+    const novoId = await window.fbAddDocTo('categories', { name:nome, subcategories:[], order:Date.now() });
+    cat = { id:novoId, name:nome, subcategories:[] };
+  }
+  if (subcategoria && !(cat.subcategories||[]).includes(subcategoria)){
+    await window.fbUpdateDocById('categories', cat.id, {
+      subcategories: [...(cat.subcategories||[]), subcategoria]
+    });
+  }
 }
 
 /* -- Material (estoque): modal -- */
@@ -5206,6 +5909,11 @@ function handleFab(){
     else openPedidoModal();
   } else if(currentScreen==='vendas'){openVendaModal();}
   else if(currentScreen==='produtos'){ openProdutoModal(); }
+  else if(currentScreen==='vitrine'){
+    if(vitrineTab==='categorias')   addCategoriaVitrine();
+    else if(vitrineTab==='faq')     novaFaqVitrine();
+    else                            openProdutoModal();
+  }
   else if(currentScreen==='estoque'){ openMaterialModal(); }
   else if(currentScreen==='clientes'){ openClienteFormModal(); }
   else openPedidoModal();
