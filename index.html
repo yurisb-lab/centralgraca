@@ -862,7 +862,7 @@ select.form-control {
 <!-- Firebase SDK (Firestore only, sem Auth) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, updateDoc, deleteDoc }
+  import { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, updateDoc, deleteDoc, writeBatch }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -877,16 +877,57 @@ select.form-control {
   const fbApp = initializeApp(firebaseConfig);
   const db    = getFirestore(fbApp);
 
+  /* ── ESPELHO DO QUE JÁ ESTÁ NO FIRESTORE ─────────────────────────
+     Guarda, por coleção, o conteúdo de cada documento como já foi gravado.
+     Assim uma alteração grava só o documento que mudou, em vez de reescrever
+     a coleção inteira — o que fazia o custo crescer junto com o histórico
+     (uma entrada de estoque reescrevia todas as movimentações já feitas).  */
+  const _espelho = {};
+
+  // JSON com as chaves em ordem fixa, para a comparação não depender da
+  // ordem em que o Firestore devolveu os campos
+  function _jsonEstavel(v) {
+    if (v === null || typeof v !== 'object') return JSON.stringify(v) ?? 'null';
+    if (Array.isArray(v)) return '[' + v.map(_jsonEstavel).join(',') + ']';
+    return '{' + Object.keys(v).sort()
+      .map(k => JSON.stringify(k) + ':' + _jsonEstavel(v[k])).join(',') + '}';
+  }
+  window._jsonEstavel = _jsonEstavel;
+
+  window.fbRegistrarEspelho = function(colName, items) {
+    const alvo = (_espelho[colName] = {});
+    (items || []).forEach(it => {
+      if (it && it.id != null) alvo[String(it.id)] = _jsonEstavel(it);
+    });
+  };
+
   window.fbSaveCollection = async function(colName, items) {
     if (!items || !Array.isArray(items)) return;
+    const espelho = (_espelho[colName] ||= {});
+
+    const alterados = [];
     for (const item of items) {
       if (!item.id) continue;
-      await setDoc(doc(db, colName, String(item.id)), item);
+      const id   = String(item.id);
+      const json = _jsonEstavel(item);
+      if (espelho[id] === json) continue;   // idêntico ao que já está lá: não grava
+      alterados.push({ id, item, json });
+    }
+    if (!alterados.length) return;
+
+    // Em lotes — o Firestore aceita até 500 operações por commit
+    for (let i = 0; i < alterados.length; i += 400) {
+      const fatia = alterados.slice(i, i + 400);
+      const lote  = writeBatch(db);
+      fatia.forEach(({ id, item }) => lote.set(doc(db, colName, id), item));
+      await lote.commit();
+      fatia.forEach(({ id, json }) => { espelho[id] = json; });
     }
   };
 
   window.fbDeleteDoc = async function(colName, id) {
     await deleteDoc(doc(db, colName, String(id)));
+    if (_espelho[colName]) delete _espelho[colName][String(id)];
   };
 
   window.fbLoadCollection = async function(colName) {
@@ -928,6 +969,8 @@ select.form-control {
         const items = await window.fbLoadCollection(colName);
         // Sempre sobrescreve o localStorage com os dados do Firestore (fonte da verdade)
         localStorage.setItem(lsKey, JSON.stringify(items));
+        // Marca o que já está gravado, para as próximas gravações mandarem só o que mudar
+        window.fbRegistrarEspelho(colName, items);
       }
       // cdg_ia_perfis é um objeto (chave = cliente), não um array, então precisa de conversão à parte
       try {
@@ -935,7 +978,23 @@ select.form-control {
         const iaMap = {};
         iaItems.forEach(it => { if (it && it.id) { const { id, ...rest } = it; iaMap[id] = rest; } });
         localStorage.setItem('cdg_ia_perfis', JSON.stringify(iaMap));
+        window.fbRegistrarEspelho('ia_perfis', iaItems);
       } catch(e) { console.warn('Erro ao sincronizar perfis de IA:', e); }
+
+      // Configurações compartilhadas entre aparelhos (categorias de produto,
+      // meta mensal, versículo). Chaves sensíveis nunca saem do aparelho.
+      try {
+        const remoto = await window.fbGetDocById('central_config', 'app');
+        if (remoto) {
+          const local = JSON.parse(localStorage.getItem('cdg_config') || '{}');
+          const { id, ...compartilhado } = remoto;
+          const juntos = { ...local, ...compartilhado };
+          (window.CONFIG_SOMENTE_LOCAL || []).forEach(k => {
+            if (local[k] !== undefined) juntos[k] = local[k]; else delete juntos[k];
+          });
+          localStorage.setItem('cdg_config', JSON.stringify(juntos));
+        }
+      } catch(e) { console.warn('Erro ao sincronizar configurações:', e); }
     } catch(e) { console.warn('Firestore sync error:', e); }
   };
 
@@ -2186,8 +2245,24 @@ const loadO = k => { try { return JSON.parse(localStorage.getItem(k)) || {}; } c
 const _saveQueue = [];
 let _fbReady = false;
 
+// Chaves de configuração que ficam só neste aparelho e nunca vão para o
+// Firestore: a chave da IA é um segredo pessoal e a senha em texto puro não
+// deve ir para um banco cujas regras ainda são abertas.
+window.CONFIG_SOMENTE_LOCAL = ['geminiApiKey', 'senhaCustom'];
+
+// Manda para o Firestore a parte compartilhável das configurações, para que
+// categorias de produto, meta mensal e versículo sejam iguais em todo aparelho
+const _syncConfig = (cfg) => {
+  if (!_fbReady || !window.fbSetDocById) { _configPendente = cfg; return; }
+  const compartilhado = { ...(cfg || {}) };
+  window.CONFIG_SOMENTE_LOCAL.forEach(k => delete compartilhado[k]);
+  window.fbSetDocById('central_config', 'app', compartilhado).catch(()=>{});
+};
+let _configPendente = null;
+
 const save = (k, v) => {
   localStorage.setItem(k, JSON.stringify(v));
+  if (k === K.C) { _syncConfig(v); return; }
   if (!Array.isArray(v) || !COL_MAP[k]) return;
   if (_fbReady && window.fbSaveCollection) {
     window.fbSaveCollection(COL_MAP[k], v).catch(()=>{});
@@ -2205,6 +2280,7 @@ window.onFbReady = function() {
     const { col, items } = _saveQueue.shift();
     window.fbSaveCollection(col, items).catch(()=>{});
   }
+  if (_configPendente) { const c = _configPendente; _configPendente = null; _syncConfig(c); }
 };
 
 window._fbSave = (k,v) => localStorage.setItem(k, JSON.stringify(v));
@@ -4240,9 +4316,22 @@ function renderVitrineContent(){
   else                                  el.innerHTML = vitrineLojaHTML();
 }
 
-// Escapa texto usado dentro de atributos HTML (aspas quebrariam o campo)
+/* ── Escape de texto vindo do usuário ───────────────────────────────
+   Nomes de categoria e de produto entram em atributos HTML e dentro de
+   strings JavaScript no onclick. Sem escapar, um nome com aspas — por
+   exemplo Bottons "Premium" — fecha o atributo antes da hora e o clique
+   para de funcionar.                                                     */
+
+// Para texto exibido e para valores de atributo
 function escAttr(v){
-  return String(v||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return String(v ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Para um valor que vai dentro de uma string JS ('...') num atributo onclick.
+// Escapa primeiro para JavaScript e depois para HTML.
+function escArg(v){
+  return escAttr(String(v ?? '').replace(/\\/g,'\\\\').replace(/'/g,"\\'"));
 }
 
 function vitrineAviso(texto){
@@ -4261,15 +4350,15 @@ function vitrineProdutosHTML(){
     const foto = (p.fotos||[])[0];
     const visivel = p.vitrine && p.status !== 'Inativo';
     return `<div class="vit-row">
-      ${foto ? `<img class="vit-thumb" src="${foto}" alt="">` : '<div class="vit-thumb-ph">🎀</div>'}
+      ${foto ? `<img class="vit-thumb" src="${escAttr(foto)}" alt="" loading="lazy">` : '<div class="vit-thumb-ph">🎀</div>'}
       <div style="flex:1;min-width:0">
-        <div style="font-size:13.5px;font-weight:600;color:var(--text-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nome}</div>
-        <div style="font-size:11.5px;color:var(--text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.categoria||'sem categoria'}${p.subcategoria?' · '+p.subcategoria:''} · ${fmtM(p.preco)}</div>
+        <div style="font-size:13.5px;font-weight:600;color:var(--text-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escAttr(p.nome)}</div>
+        <div style="font-size:11.5px;color:var(--text-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escAttr(p.categoria||'sem categoria')}${p.subcategoria?' · '+escAttr(p.subcategoria):''} · ${fmtM(p.preco)}</div>
         ${p.vitrine && !visivel ? '<div style="font-size:11px;color:var(--danger);margin-top:2px">Status Inativo — oculto na loja</div>' : ''}
         ${p.vitrine && !(p.fotos||[]).length ? '<div style="font-size:11px;color:var(--danger);margin-top:2px">Sem foto — adicione uma imagem</div>' : ''}
       </div>
-      <button class="btn btn-ghost btn-sm" onclick="openProdutoById('${p.id}')">Editar</button>
-      <button class="btn ${p.vitrine?'btn-ghost':'btn-rose'} btn-sm" onclick="toggleVitrineProduto('${p.id}')">${p.vitrine?'Tirar':'Exibir'}</button>
+      <button class="btn btn-ghost btn-sm" onclick="openProdutoById('${escArg(p.id)}')">Editar</button>
+      <button class="btn ${p.vitrine?'btn-ghost':'btn-rose'} btn-sm" onclick="toggleVitrineProduto('${escArg(p.id)}')">${p.vitrine?'Tirar':'Exibir'}</button>
     </div>`;
   };
 
@@ -4336,19 +4425,19 @@ function vitrineCategoriasHTML(){
   const blocos = categories.map(c=>{
     const qtd = prods.filter(p=>p.categoria===c.name).length;
     const chips = (c.subcategories||[]).map(s=>`
-      <span class="vit-chip">${s}<button onclick="removerSubcategoriaVitrine('${c.id}','${String(s).replace(/'/g,"\\'")}')" title="Remover">✕</button></span>`).join('');
+      <span class="vit-chip">${escAttr(s)}<button onclick="removerSubcategoriaVitrine('${escArg(c.id)}','${escArg(s)}')" title="Remover">✕</button></span>`).join('');
     return `<div class="card">
       <div style="display:flex;align-items:center;gap:8px">
         <div style="flex:1;min-width:0">
-          <div style="font-size:14px;font-weight:600;color:var(--text-dark)">${c.name}</div>
+          <div style="font-size:14px;font-weight:600;color:var(--text-dark)">${escAttr(c.name)}</div>
           <div style="font-size:11.5px;color:var(--text-soft)">${qtd} produto(s) na loja</div>
         </div>
-        <button class="btn btn-ghost btn-sm" onclick="renomearCategoriaVitrine('${c.id}','${String(c.name).replace(/'/g,"\\'")}')">Renomear</button>
-        <button class="btn btn-ghost btn-sm" onclick="excluirCategoriaVitrine('${c.id}','${String(c.name).replace(/'/g,"\\'")}')">Excluir</button>
+        <button class="btn btn-ghost btn-sm" onclick="renomearCategoriaVitrine('${escArg(c.id)}','${escArg(c.name)}')">Renomear</button>
+        <button class="btn btn-ghost btn-sm" onclick="excluirCategoriaVitrine('${escArg(c.id)}','${escArg(c.name)}')">Excluir</button>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center">
         ${chips || '<span style="font-size:11.5px;color:var(--text-soft);font-style:italic">Sem subcategorias</span>'}
-        <button class="btn btn-ghost btn-sm" onclick="addSubcategoriaVitrine('${c.id}')">+ Subcategoria</button>
+        <button class="btn btn-ghost btn-sm" onclick="addSubcategoriaVitrine('${escArg(c.id)}')">+ Subcategoria</button>
       </div>
     </div>`;
   }).join('');
@@ -4437,9 +4526,9 @@ function vitrineGaleriaHTML(){
   if (!carregado) return vitrineCarregandoHTML('a galeria');
   const itens = gallery.map(g=>`
     <div class="vit-row">
-      <img class="vit-thumb" src="${g.image}" alt="">
-      <div style="flex:1;min-width:0;font-size:12.5px;color:var(--text-mid)">${g.caption||'<i style="color:var(--text-soft)">sem legenda</i>'}</div>
-      <button class="btn btn-ghost btn-sm" onclick="excluirFotoGaleria('${g.id}')">Excluir</button>
+      <img class="vit-thumb" src="${escAttr(g.image)}" alt="" loading="lazy">
+      <div style="flex:1;min-width:0;font-size:12.5px;color:var(--text-mid)">${g.caption?escAttr(g.caption):'<i style="color:var(--text-soft)">sem legenda</i>'}</div>
+      <button class="btn btn-ghost btn-sm" onclick="excluirFotoGaleria('${escArg(g.id)}')">Excluir</button>
     </div>`).join('');
 
   return vitrineAviso('Fotos que aparecem na seção <b>Nossos Clientes</b> da loja.')
@@ -4496,11 +4585,11 @@ function vitrineFaqHTML(){
   if (!carregado) return vitrineCarregandoHTML('as perguntas');
   const itens = faqs.map(f=>`
     <div style="padding:11px 0;border-bottom:1px solid var(--border-light)">
-      <div style="font-size:13.5px;font-weight:600;color:var(--text-dark)">${f.question||''}</div>
-      <div style="font-size:12.5px;color:var(--text-mid);line-height:1.6;margin-top:4px">${f.answer||''}</div>
+      <div style="font-size:13.5px;font-weight:600;color:var(--text-dark)">${escAttr(f.question)}</div>
+      <div style="font-size:12.5px;color:var(--text-mid);line-height:1.6;margin-top:4px">${escAttr(f.answer)}</div>
       <div style="display:flex;gap:6px;margin-top:8px">
-        <button class="btn btn-ghost btn-sm" onclick="editarFaqVitrine('${f.id}')">Editar</button>
-        <button class="btn btn-ghost btn-sm" onclick="excluirFaqVitrine('${f.id}')">Excluir</button>
+        <button class="btn btn-ghost btn-sm" onclick="editarFaqVitrine('${escArg(f.id)}')">Editar</button>
+        <button class="btn btn-ghost btn-sm" onclick="excluirFaqVitrine('${escArg(f.id)}')">Excluir</button>
       </div>
     </div>`).join('');
 
@@ -4562,7 +4651,7 @@ function vitrineLojaHTML(){
         </div>
         <div class="form-group">
           <label class="form-label">Texto "Sobre a loja"</label>
-          <textarea class="form-control" id="vit-cfg-sobre" style="min-height:120px" placeholder="Conte a história da marca...">${config.sobre||''}</textarea>
+          <textarea class="form-control" id="vit-cfg-sobre" style="min-height:120px" placeholder="Conte a história da marca...">${escAttr(config.sobre)}</textarea>
         </div>
         <button class="btn btn-primary" style="width:100%" onclick="salvarConfigVitrine(this)">Salvar dados da loja</button>
       </div>`;
