@@ -356,6 +356,68 @@ select.form-control {
   padding: 0 4px;
 }
 
+/* ── GRUPOS DO MENU (uma aba por área, com subitens) ── */
+.nav-section {
+  font-size: 9.5px; font-weight: 700; letter-spacing: 1.3px;
+  text-transform: uppercase; color: var(--text-soft);
+  padding: 14px 20px 6px;
+}
+.nav-group-toggle {
+  display: flex; align-items: center; gap: 13px;
+  width: 100%; text-align: left;
+  padding: 12px 20px;
+  cursor: pointer; border: none; background: none;
+  color: var(--text-mid); font-size: 13.5px; font-weight: 500;
+  font-family: inherit;
+  transition: background .15s, color .15s;
+}
+.nav-group-toggle:hover { background: var(--cream-dark); }
+.nav-group-toggle > svg:first-child {
+  display: block; width: 20px; height: 20px;
+  fill: none; stroke: currentColor; stroke-width: 1.6; flex-shrink: 0;
+}
+.nav-group-toggle span { flex: 1; min-width: 0; }
+.nav-chevron {
+  width: 14px !important; height: 14px !important;
+  stroke-width: 2.4 !important; flex-shrink: 0;
+  transition: transform .22s ease;
+  color: var(--text-soft);
+}
+.nav-group-toggle .nav-badge { margin-left: 0; }
+/* com o grupo aberto o contador já aparece no subitem Agenda */
+.nav-group.open > .nav-group-toggle .nav-badge { display: none !important; }
+.nav-group.open > .nav-group-toggle { color: var(--blue-dark); font-weight: 700; }
+.nav-group.open .nav-chevron { transform: rotate(90deg); color: var(--blue-dark); }
+/* grupo que contém a tela aberta: marca discreta na lateral */
+.nav-group.has-active > .nav-group-toggle { color: var(--blue-dark); font-weight: 700; }
+.nav-group.has-active > .nav-group-toggle > svg:first-child { stroke: var(--blue-dark); }
+
+.nav-sub {
+  display: grid; grid-template-rows: 0fr;
+  transition: grid-template-rows .24s ease;
+  background: var(--cream);
+}
+.nav-group.open .nav-sub { grid-template-rows: 1fr; }
+.nav-sub-inner { overflow: hidden; min-height: 0; }
+
+.nav-subitem {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; text-align: left;
+  padding: 10px 20px 10px 53px;
+  cursor: pointer; border: none; background: none;
+  color: var(--text-mid); font-size: 12.5px; font-weight: 500;
+  font-family: inherit; position: relative;
+  transition: background .15s, color .15s;
+}
+.nav-subitem::before {
+  content: ''; position: absolute;
+  left: 29px; top: 0; bottom: 0; width: 1px;
+  background: var(--border-light);
+}
+.nav-subitem:hover { background: var(--cream-dark); color: var(--blue-dark); }
+.nav-subitem.active { color: var(--blue-dark); font-weight: 700; background: var(--blue-pale); }
+.nav-subitem.active::before { background: var(--blue-dark); width: 2px; }
+
 /* Desktop: side-nav becomes a permanent, always-visible sidebar */
 @media (min-width: 900px) {
   .side-nav { transform: translateX(0); box-shadow: none; }
@@ -1233,7 +1295,6 @@ select.form-control {
         <button class="tab" data-tab="despesas" onclick="setFinTab(this)">Despesas</button>
         <button class="tab" data-tab="pagamentos" onclick="setFinTab(this)">Pagamentos</button>
         <button class="tab" data-tab="lucratividade" onclick="setFinTab(this)">Lucratividade</button>
-        <button class="tab" data-tab="estoque" onclick="setFinTab(this)">Estoque</button>
       </div>
       <div id="fin-list"></div>
     </div>
@@ -1249,6 +1310,9 @@ select.form-control {
 
     <!-- PRODUTOS -->
     <div class="screen" id="screen-produtos">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+        <button class="see-all" onclick="navigate('vitrine','produtos')">🛍️ Publicar na loja</button>
+      </div>
       <div id="produtos-content"></div>
     </div>
 
@@ -1327,45 +1391,11 @@ select.form-control {
     <div class="screen" id="screen-config">
       <div class="card" id="card-armazenamento" style="display:none"></div>
       <div class="card">
-        <div class="cfg-row" onclick="showVerseConfig()">
-          <div class="cfg-left">
-            <div class="cfg-icon"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
-            <div><div class="cfg-text">Versículo do dia</div><div class="cfg-sub">Exibido na tela de login</div></div>
-          </div>
-          <span class="cfg-arrow">›</span>
-        </div>
-        <div class="cfg-row" onclick="showMetaConfig()">
-          <div class="cfg-left">
-            <div class="cfg-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></div>
-            <div><div class="cfg-text">Meta de faturamento mensal</div><div class="cfg-sub">Acompanhar progresso no Início</div></div>
-          </div>
-          <span class="cfg-arrow">›</span>
-        </div>
+        <div class="card-label">Conta</div>
         <div class="cfg-row" onclick="showProfileConfig()">
           <div class="cfg-left">
             <div class="cfg-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
             <div><div class="cfg-text">Perfil e senha</div><div class="cfg-sub">Alterar dados da conta</div></div>
-          </div>
-          <span class="cfg-arrow">›</span>
-        </div>
-        <div class="cfg-row" onclick="showApiKeyConfig()">
-          <div class="cfg-left">
-            <div class="cfg-icon"><svg viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></div>
-            <div><div class="cfg-text">Importar pedidos com IA</div><div class="cfg-sub">Chave da API do Google Gemini</div></div>
-          </div>
-          <span class="cfg-arrow">›</span>
-        </div>
-        <div class="cfg-row" onclick="testNotification()">
-          <div class="cfg-left">
-            <div class="cfg-icon"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
-            <div><div class="cfg-text">Notificações</div><div class="cfg-sub">Alertas automáticos de entrega</div></div>
-          </div>
-          <span class="cfg-arrow">›</span>
-        </div>
-        <div class="cfg-row" onclick="exportData()">
-          <div class="cfg-left">
-            <div class="cfg-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
-            <div><div class="cfg-text">Exportar dados</div><div class="cfg-sub">Baixar relatório JSON</div></div>
           </div>
           <span class="cfg-arrow">›</span>
         </div>
@@ -1376,6 +1406,53 @@ select.form-control {
             </div>
             <div><div class="cfg-text" style="color:var(--rose-dark)">Sair da conta</div></div>
           </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Negócio</div>
+        <div class="cfg-row" onclick="showMetaConfig()">
+          <div class="cfg-left">
+            <div class="cfg-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></div>
+            <div><div class="cfg-text">Meta de faturamento mensal</div><div class="cfg-sub">Acompanhar progresso no Início</div></div>
+          </div>
+          <span class="cfg-arrow">›</span>
+        </div>
+        <div class="cfg-row" onclick="showVerseConfig()">
+          <div class="cfg-left">
+            <div class="cfg-icon"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
+            <div><div class="cfg-text">Versículo do dia</div><div class="cfg-sub">Exibido na tela de login</div></div>
+          </div>
+          <span class="cfg-arrow">›</span>
+        </div>
+        <div class="cfg-row" onclick="testNotification()">
+          <div class="cfg-left">
+            <div class="cfg-icon"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+            <div><div class="cfg-text">Notificações</div><div class="cfg-sub">Alertas automáticos de entrega</div></div>
+          </div>
+          <span class="cfg-arrow">›</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Inteligência artificial</div>
+        <div class="cfg-row" onclick="showApiKeyConfig()">
+          <div class="cfg-left">
+            <div class="cfg-icon"><svg viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></div>
+            <div><div class="cfg-text">Chave da API do Google Gemini</div><div class="cfg-sub">Usada pelo Assistente, pela Análise de clientes e pela importação de pedidos</div></div>
+          </div>
+          <span class="cfg-arrow">›</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Dados</div>
+        <div class="cfg-row" onclick="exportData()">
+          <div class="cfg-left">
+            <div class="cfg-icon"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+            <div><div class="cfg-text">Exportar dados</div><div class="cfg-sub">Baixar relatório JSON</div></div>
+          </div>
+          <span class="cfg-arrow">›</span>
         </div>
       </div>
 
@@ -1407,50 +1484,94 @@ select.form-control {
     <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     <span>Início</span>
   </button>
-  <button class="nav-item" data-screen="pedidos" onclick="navigate('pedidos')">
-    <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-    <span>Pedidos</span>
-  </button>
-  <button class="nav-item" data-screen="agenda" onclick="navigate('agenda')">
-    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-    <span>Agenda</span>
-    <span class="nav-badge" id="notif-badge" style="display:none">!</span>
-  </button>
-  <button class="nav-item" data-screen="financeiro" onclick="navigate('financeiro')">
-    <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-    <span>Financeiro</span>
-  </button>
-  <button class="nav-item" data-screen="vendas" onclick="navigate('vendas')">
-    <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-    <span>Vendas</span>
-  </button>
-  <button class="nav-item" data-screen="produtos" onclick="navigate('produtos')">
-    <svg viewBox="0 0 24 24"><path d="M20.59 13.41 13.42 20.6a2 2 0 0 1-2.83 0L2 12.01V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-    <span>Produtos</span>
-  </button>
-  <button class="nav-item" data-screen="vitrine" onclick="navigate('vitrine')">
-    <svg viewBox="0 0 24 24"><path d="M3 9h18"/><path d="M5 9V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4"/><path d="M4 9h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M9 13h6"/></svg>
-    <span>Vitrine</span>
-  </button>
-  <button class="nav-item" data-screen="estoque" onclick="navigate('estoque')">
-    <svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-    <span>Estoque</span>
-  </button>
-  <button class="nav-item" data-screen="clientes" onclick="navigate('clientes')">
-    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-    <span>Clientes</span>
-  </button>
-  <button class="nav-item" data-screen="ia" onclick="navigate('ia')">
-    <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-    <span>Área IA</span>
-  </button>
-  <button class="nav-item" data-screen="assistente" onclick="navigate('assistente')">
-    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-    <span>Assistente</span>
-  </button>
+
+  <div class="nav-section">Dia a dia</div>
+
+  <!-- ── PEDIDOS (pedidos, agenda e clientes no mesmo lugar) ── -->
+  <div class="nav-group" data-group="pedidos">
+    <button class="nav-group-toggle" onclick="toggleNavGroup('pedidos')" aria-expanded="false">
+      <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+      <span>Pedidos</span>
+      <span class="nav-badge" id="notif-badge-grupo" style="display:none">!</span>
+      <svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <div class="nav-sub"><div class="nav-sub-inner">
+      <button class="nav-subitem" data-screen="pedidos" onclick="navigate('pedidos')">Todos os pedidos</button>
+      <button class="nav-subitem" data-screen="agenda" onclick="navigate('agenda')">
+        Agenda de entregas
+        <span class="nav-badge" id="notif-badge" style="display:none">!</span>
+      </button>
+      <button class="nav-subitem" data-screen="clientes" onclick="navigate('clientes')">Clientes</button>
+    </div></div>
+  </div>
+
+  <!-- ── FINANCEIRO (abas da tela + vendas avulsas) ── -->
+  <div class="nav-group" data-group="financeiro">
+    <button class="nav-group-toggle" onclick="toggleNavGroup('financeiro')" aria-expanded="false">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <span>Financeiro</span>
+      <svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <div class="nav-sub"><div class="nav-sub-inner">
+      <button class="nav-subitem" data-screen="financeiro" data-tab="receitas" onclick="navigate('financeiro','receitas')">Receitas</button>
+      <button class="nav-subitem" data-screen="financeiro" data-tab="despesas" onclick="navigate('financeiro','despesas')">Despesas</button>
+      <button class="nav-subitem" data-screen="financeiro" data-tab="pagamentos" onclick="navigate('financeiro','pagamentos')">A receber</button>
+      <button class="nav-subitem" data-screen="financeiro" data-tab="lucratividade" onclick="navigate('financeiro','lucratividade')">Lucratividade</button>
+      <button class="nav-subitem" data-screen="vendas" data-tab="historico" onclick="navigate('vendas','historico')">Vendas avulsas</button>
+    </div></div>
+  </div>
+
+  <div class="nav-section">Catálogo e loja</div>
+
+  <!-- ── CATÁLOGO (produtos + materiais/estoque) ── -->
+  <div class="nav-group" data-group="catalogo">
+    <button class="nav-group-toggle" onclick="toggleNavGroup('catalogo')" aria-expanded="false">
+      <svg viewBox="0 0 24 24"><path d="M20.59 13.41 13.42 20.6a2 2 0 0 1-2.83 0L2 12.01V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      <span>Catálogo</span>
+      <svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <div class="nav-sub"><div class="nav-sub-inner">
+      <button class="nav-subitem" data-screen="produtos" onclick="navigate('produtos')">Produtos</button>
+      <button class="nav-subitem" data-screen="estoque" data-tab="materiais" onclick="navigate('estoque','materiais')">Materiais</button>
+      <button class="nav-subitem" data-screen="estoque" data-tab="relatorio" onclick="navigate('estoque','relatorio')">Níveis de estoque</button>
+    </div></div>
+  </div>
+
+  <!-- ── LOJA / SITE: tudo que o cliente vê fica só aqui ── -->
+  <div class="nav-group" data-group="loja">
+    <button class="nav-group-toggle" onclick="toggleNavGroup('loja')" aria-expanded="false">
+      <svg viewBox="0 0 24 24"><path d="M3 9h18"/><path d="M5 9V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4"/><path d="M4 9h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M9 13h6"/></svg>
+      <span>Loja online</span>
+      <svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <div class="nav-sub"><div class="nav-sub-inner">
+      <button class="nav-subitem" data-screen="vitrine" data-tab="produtos" onclick="navigate('vitrine','produtos')">Produtos na loja</button>
+      <button class="nav-subitem" data-screen="vitrine" data-tab="categorias" onclick="navigate('vitrine','categorias')">Categorias</button>
+      <button class="nav-subitem" data-screen="vitrine" data-tab="galeria" onclick="navigate('vitrine','galeria')">Galeria de fotos</button>
+      <button class="nav-subitem" data-screen="vitrine" data-tab="faq" onclick="navigate('vitrine','faq')">Perguntas frequentes</button>
+      <button class="nav-subitem" data-screen="vitrine" data-tab="loja" onclick="navigate('vitrine','loja')">Contato e sobre</button>
+    </div></div>
+  </div>
+
+  <div class="nav-section">Apoio</div>
+
+  <!-- ── INTELIGÊNCIA ARTIFICIAL ── -->
+  <div class="nav-group" data-group="ia">
+    <button class="nav-group-toggle" onclick="toggleNavGroup('ia')" aria-expanded="false">
+      <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      <span>Inteligência IA</span>
+      <svg class="nav-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <div class="nav-sub"><div class="nav-sub-inner">
+      <button class="nav-subitem" data-screen="assistente" onclick="navigate('assistente')">Assistente do negócio</button>
+      <button class="nav-subitem" data-screen="ia" onclick="navigate('ia')">Análise de clientes</button>
+      <button class="nav-subitem" onclick="abrirChaveIaPeloMenu()">Chave da API (Gemini)</button>
+    </div></div>
+  </div>
+
   <button class="nav-item" data-screen="config" onclick="navigate('config')">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-    <span>Config</span>
+    <span>Configurações</span>
   </button>
 </nav>
 
@@ -2614,15 +2735,36 @@ async function showForgot() {
 }
 
 /* ── NAVIGATION ──────────────────────────────────── */
-const screenTitles = { dashboard:null, pedidos:'Pedidos', agenda:'Agenda', financeiro:'Financeiro', vendas:'Vendas', produtos:'Produtos', vitrine:'Vitrine da Loja', estoque:'Estoque', clientes:'Clientes', ia:'Área IA', assistente:'Assistente', config:'Configurações' };
+const screenTitles = { dashboard:null, pedidos:'Pedidos', agenda:'Agenda', financeiro:'Financeiro', vendas:'Vendas', produtos:'Produtos', vitrine:'Loja online', estoque:'Estoque', clientes:'Clientes', ia:'Análise de clientes', assistente:'Assistente', config:'Configurações' };
+
+/* Telas com abas: o menu lateral pode abrir direto numa aba, então cada tela
+   diz aqui quais abas aceita, onde guarda a aba atual e como se redesenha.  */
+const abasPorTela = {
+  financeiro: { abas:['receitas','despesas','pagamentos','lucratividade'],       get:()=>finTab,     set:v=>finTab=v,     titulos:{receitas:'Receitas', despesas:'Despesas', pagamentos:'A receber', lucratividade:'Lucratividade'} },
+  vendas:     { abas:['historico','avulso'],                                     get:()=>vendasTab,  set:v=>vendasTab=v,  titulos:{historico:'Vendas avulsas', avulso:'Vendas avulsas'} },
+  vitrine:    { abas:['produtos','categorias','galeria','faq','loja'],           get:()=>vitrineTab, set:v=>vitrineTab=v, titulos:{produtos:'Loja · Produtos', categorias:'Loja · Categorias', galeria:'Loja · Galeria', faq:'Loja · FAQ', loja:'Loja · Contato'} },
+  estoque:    { abas:['materiais','relatorio'],                                  get:()=>estoqueTab, set:v=>estoqueTab=v, titulos:{materiais:'Materiais', relatorio:'Níveis de estoque'} },
+  agenda:     { abas:['hoje','amanha','semana','mes','atrasados'],               get:()=>agendaTab,  set:v=>agendaTab=v,  titulos:{} }
+};
+
+// Deixa a aba escolhida marcada dentro da própria tela (as abas continuam lá)
+function marcarAbaNaTela(s, aba){
+  document.querySelectorAll(`#screen-${s} .tab`).forEach(t=>{
+    t.classList.toggle('active', t.dataset.tab === aba);
+  });
+}
 
 function navigate(s, param) {
   currentScreen = s;
   document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
   document.getElementById('screen-'+s).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(el => {
-    el.classList.toggle('active', el.dataset.screen === s);
-  });
+
+  // Quando o menu aponta para uma aba específica, ela vira a aba ativa da tela
+  const cfgAbas = abasPorTela[s];
+  if (cfgAbas && param && cfgAbas.abas.includes(param)) {
+    cfgAbas.set(param);
+    marcarAbaNaTela(s, param);
+  }
 
   const logo   = document.getElementById('topbar-logo');
   const title  = document.getElementById('topbar-title');
@@ -2631,7 +2773,7 @@ function navigate(s, param) {
     logo.style.display = 'block'; title.style.display = 'none';
   } else {
     logo.style.display = 'none'; title.style.display = 'block';
-    title.textContent = screenTitles[s];
+    title.textContent = (cfgAbas?.titulos?.[cfgAbas.get()]) || screenTitles[s];
   }
   action.style.opacity = s==='pedidos' ? '1' : '0';
   action.style.pointerEvents = s==='pedidos' ? 'auto' : 'none';
@@ -2651,10 +2793,68 @@ function navigate(s, param) {
   if (s==='assistente')  renderAssistenteScreen();
   if (s==='config')      renderArmazenamento();
 
+  syncNavAtivo();
   closeSideNav(); // no-op visually on desktop (side-nav stays fixed open via CSS)
 }
 
 function goToScreen(s, filter) { navigate(s, filter); }
+
+/* ── MENU EM GRUPOS ──────────────────────────────────
+   Cada área do negócio é um grupo do menu sanduíche; os subitens levam
+   direto à aba certa da tela. Só um grupo fica aberto por vez e o grupo
+   da tela atual abre sozinho.                                          */
+function toggleNavGroup(nome){
+  const alvo = document.querySelector(`.nav-group[data-group="${nome}"]`);
+  if (!alvo) return;
+  const vaiAbrir = !alvo.classList.contains('open');
+  document.querySelectorAll('.nav-group').forEach(g=>{
+    g.classList.remove('open');
+    g.querySelector('.nav-group-toggle')?.setAttribute('aria-expanded','false');
+  });
+  if (vaiAbrir){
+    alvo.classList.add('open');
+    alvo.querySelector('.nav-group-toggle')?.setAttribute('aria-expanded','true');
+  }
+}
+
+// Marca no menu a tela/aba que está aberta e expande o grupo correspondente
+function syncNavAtivo(){
+  const abaAtual = abasPorTela[currentScreen]?.get();
+
+  document.querySelectorAll('.nav-item').forEach(el=>{
+    el.classList.toggle('active', el.dataset.screen === currentScreen);
+  });
+
+  let grupoAtivo = null;
+  document.querySelectorAll('.nav-subitem').forEach(el=>{
+    const bate = el.dataset.screen === currentScreen &&
+                 (!el.dataset.tab || el.dataset.tab === abaAtual);
+    el.classList.toggle('active', bate);
+    if (bate) grupoAtivo = el.closest('.nav-group');
+  });
+
+  document.querySelectorAll('.nav-group').forEach(g=>{
+    g.classList.toggle('has-active', g === grupoAtivo);
+    if (g === grupoAtivo){
+      g.classList.add('open');
+      g.querySelector('.nav-group-toggle')?.setAttribute('aria-expanded','true');
+    }
+  });
+}
+
+// Ao trocar de aba dentro da tela, o título do topo acompanha
+function atualizarTituloAba(){
+  const cfg = abasPorTela[currentScreen];
+  const title = document.getElementById('topbar-title');
+  if (!cfg || !title || currentScreen === 'dashboard') return;
+  title.textContent = cfg.titulos?.[cfg.get()] || screenTitles[currentScreen];
+}
+
+// Atalho do menu IA: leva à tela de configurações já com a chave aberta
+function abrirChaveIaPeloMenu(){
+  navigate('config');
+  showApiKeyConfig();
+}
 function handleTopAction() { document.getElementById('search-pedidos')?.focus(); }
 
 /* ── SIDE NAV (fixed drawer, overlays content, never pushes layout) ── */
@@ -2716,9 +2916,13 @@ function renderDashboard() {
     ll.innerHTML = atrasados.map(p=>pedidoCardHTML(p)).join('');
   } else { lh.style.display='none'; ll.innerHTML=''; }
 
-  const nb = document.getElementById('notif-badge');
-  nb.style.display = atrasados.length ? 'flex' : 'none';
-  nb.textContent = atrasados.length;
+  // o mesmo contador aparece no subitem "Agenda" e no grupo "Pedidos" fechado
+  ['notif-badge','notif-badge-grupo'].forEach(id=>{
+    const nb = document.getElementById(id);
+    if (!nb) return;
+    nb.style.display = atrasados.length ? 'flex' : 'none';
+    nb.textContent = atrasados.length;
+  });
 }
 
 /* ── AVISOS DE ENTREGA (hoje/amanhã) ─────────────── */
@@ -4527,6 +4731,7 @@ function setVitrineTab(el){
   el.classList.add('active');
   vitrineTab = el.dataset.tab;
   renderVitrineContent();
+  syncNavAtivo(); atualizarTituloAba();
 }
 
 function renderVitrineScreen(){
@@ -4978,6 +5183,7 @@ function renderEstoqueScreen(){ renderEstoqueContent(estoqueTab); }
 function setEstoqueTab(el){
   document.querySelectorAll('#screen-estoque .tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active'); estoqueTab = el.dataset.tab; renderEstoqueContent(estoqueTab);
+  syncNavAtivo(); atualizarTituloAba();
 }
 
 function renderEstoqueContent(tab){
@@ -5932,6 +6138,7 @@ function renderFinanceiro(){
 function setFinTab(el){
   document.querySelectorAll('#screen-financeiro .tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active'); finTab=el.dataset.tab; renderFinanceiro();
+  syncNavAtivo(); atualizarTituloAba();
 }
 
 function agruparPorAno(lista){
@@ -6025,8 +6232,6 @@ function renderFinList(tab){
     el.innerHTML = anos.map(ano=>renderPilhaDespesas(ano, porAno[ano])).join('');
   } else if(tab==='lucratividade'){
     el.innerHTML = renderLucratividade();
-  } else if(tab==='estoque'){
-    el.innerHTML = renderRelatorioEstoque();
   } else {
     const ps=load(K.P).filter(p=>p.pendente>0&&p.status!=='Cancelado').sort(sortByDate);
     if(!ps.length){el.innerHTML=`<div class="card">${emptyHTML('Nenhum pagamento pendente.')}</div>`;return;}
@@ -6143,6 +6348,7 @@ function renderVendas(){ renderVendasContent(vendasTab); }
 function setVendasTab(el){
   document.querySelectorAll('#screen-vendas .tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active'); vendasTab=el.dataset.tab; renderVendasContent(vendasTab);
+  syncNavAtivo(); atualizarTituloAba();
 }
 function renderVendasContent(tab){
   const el=document.getElementById('vendas-content');
