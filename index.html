@@ -963,6 +963,121 @@ select.form-control {
   pointer-events: none; user-select: none;
 }
 
+/* ── TUTORIAL DE BOAS-VINDAS ─────────────────────────
+   Passo a passo mostrado quando alguém entra e ainda não viu as mudanças
+   desta versão. Fica acima das modais (que sobem a partir do z-index 1000)
+   e abaixo do toast (3000), para um aviso ainda ser visto com ele aberto. */
+.tut-overlay {
+  position: fixed; inset: 0;
+  background: rgba(46,42,38,.55);
+  backdrop-filter: blur(4px);
+  z-index: 2500; display: none;
+  align-items: flex-end; justify-content: center;
+  padding-top: calc(12px + var(--sa-top));
+}
+.tut-overlay.active { display: flex; }
+.tut-card {
+  position: relative;
+  background: var(--surface);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  width: 100%; max-width: 520px;
+  max-height: 100%; overflow-y: auto;
+  padding: 20px 22px calc(22px + var(--sa-bottom));
+  box-shadow: var(--shadow-lg);
+  animation: slideUp .28s cubic-bezier(.34,1.1,.64,1);
+}
+.tut-top {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; margin-bottom: 14px;
+}
+.tut-contador {
+  font-size: 10px; font-weight: 700; letter-spacing: 1.2px;
+  text-transform: uppercase; color: var(--text-soft);
+  white-space: nowrap;
+}
+.tut-top-acoes { display: flex; align-items: center; gap: 4px; }
+.tut-link {
+  background: none; border: none; cursor: pointer; font-family: inherit;
+  font-size: 12px; font-weight: 600; color: var(--blue-dark);
+  padding: 6px 8px; border-radius: 8px;
+}
+.tut-link:hover { background: var(--blue-pale); }
+/* em tela estreita o rótulo encurta para "Pular", sem empurrar o contador */
+@media (max-width: 400px) { .tut-link .tut-largo { display: none; } }
+.tut-fechar {
+  width: 30px; height: 30px; padding: 0; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none; border-radius: 8px;
+  color: var(--text-soft); cursor: pointer;
+}
+.tut-fechar:hover { background: var(--cream-dark); color: var(--text); }
+.tut-fechar svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; }
+
+/* trilha de progresso: cada traço é clicável e leva ao passo */
+.tut-trilha { display: flex; gap: 5px; margin-bottom: 20px; }
+.tut-passo-btn {
+  flex: 1; height: 4px; min-width: 8px; padding: 0;
+  border: none; border-radius: 2px; cursor: pointer;
+  background: var(--cream-dark); transition: background .2s;
+}
+.tut-passo-btn.visto  { background: var(--blue-light); }
+.tut-passo-btn.atual  { background: var(--blue-dark); }
+
+.tut-selo {
+  display: inline-block; font-size: 10px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
+  color: var(--rose-dark); background: var(--rose-pale);
+  border: 1px solid var(--rose-light); border-radius: 999px;
+  padding: 4px 10px; margin-bottom: 14px;
+}
+.tut-icone {
+  width: 54px; height: 54px; border-radius: 17px;
+  background: var(--blue-pale); border: 1px solid var(--blue-light);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 15px;
+}
+.tut-icone svg { width: 25px; height: 25px; fill: none; stroke: var(--blue-dark); stroke-width: 1.7; }
+.tut-titulo {
+  font-family: var(--font-display);
+  font-size: 25px; font-weight: 600; line-height: 1.2;
+  color: var(--text); margin-bottom: 9px;
+}
+.tut-texto { font-size: 14px; line-height: 1.7; color: var(--text-mid); }
+.tut-texto strong { color: var(--text); font-weight: 600; }
+.tut-lista { list-style: none; margin-top: 15px; display: flex; flex-direction: column; gap: 10px; }
+.tut-lista li {
+  display: flex; gap: 10px; align-items: flex-start;
+  font-size: 13.5px; line-height: 1.6; color: var(--text-mid);
+}
+.tut-lista li::before {
+  content: '✦'; color: var(--gold-deep); font-size: 12px;
+  line-height: 1.7; flex-shrink: 0;
+}
+.tut-lista strong { color: var(--text); font-weight: 600; }
+.tut-nota {
+  margin-top: 16px; padding: 11px 13px;
+  font-size: 12px; line-height: 1.65; color: var(--text-mid);
+  background: var(--blue-pale); border-radius: var(--r-sm);
+}
+
+/* a escolha de não ver mais — só aparece no último passo */
+.tut-check {
+  display: flex; align-items: flex-start; gap: 11px; cursor: pointer;
+  margin-top: 20px; padding: 13px 15px;
+  background: var(--cream); border: 1.5px solid var(--border-light);
+  border-radius: var(--r-sm);
+}
+.tut-check:hover { border-color: var(--blue-light); }
+.tut-check input {
+  width: 18px; height: 18px; margin-top: 1px; flex-shrink: 0;
+  accent-color: var(--blue-dark); cursor: pointer;
+}
+.tut-check-txt { font-size: 13px; font-weight: 600; color: var(--text); }
+.tut-check-sub { font-size: 11.5px; line-height: 1.55; color: var(--text-soft); margin-top: 2px; }
+
+.tut-footer { display: flex; gap: 10px; margin-top: 20px; }
+.tut-footer .btn { flex: 1; }
+
 /* ── TABLET / DESKTOP ────────────────────────────────
    Fica no fim da folha de propósito: são sobreposições das regras de
    celular acima, e classe com classe quem vem depois vence.
@@ -984,6 +1099,15 @@ select.form-control {
     animation: modalPop .22s cubic-bezier(.34,1.1,.64,1);
   }
   .modal-handle { display: none; }
+
+  /* o tutorial também deixa de ser folha do rodapé e vira caixa centrada */
+  .tut-overlay { align-items: center; padding: 24px; }
+  .tut-card {
+    border-radius: var(--r-xl);
+    padding: 26px 28px 28px;
+    max-height: 88dvh;
+    animation: modalPop .22s cubic-bezier(.34,1.1,.64,1);
+  }
 }
 @keyframes modalPop {
   from { transform: translateY(14px); opacity: 0; }
@@ -1504,6 +1628,17 @@ select.form-control {
           <div class="cfg-left">
             <div class="cfg-icon"><svg viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg></div>
             <div><div class="cfg-text">Chave da API do Google Gemini</div><div class="cfg-sub">Usada pelo Assistente, pela Análise de clientes e pela importação de pedidos</div></div>
+          </div>
+          <span class="cfg-arrow">›</span>
+        </div>
+      </div>
+
+      <div class="card" id="card-ajuda">
+        <div class="card-label">Ajuda</div>
+        <div class="cfg-row" onclick="reverTutorial()">
+          <div class="cfg-left">
+            <div class="cfg-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4"/><line x1="12" y1="17.5" x2="12.01" y2="17.5"/></svg></div>
+            <div><div class="cfg-text">Tutorial de novidades</div><div class="cfg-sub">Rever o passo a passo das mudanças do app</div></div>
           </div>
           <span class="cfg-arrow">›</span>
         </div>
@@ -2487,6 +2622,44 @@ select.form-control {
 </div>
 
 <!-- ════════════════════════════════════════════════
+     TUTORIAL DE BOAS-VINDAS
+     O conteúdo de cada passo está em TUTORIAL_PASSOS, no script.
+════════════════════════════════════════════════ -->
+<div class="tut-overlay" id="tutorial" role="dialog" aria-modal="true" aria-labelledby="tut-titulo">
+  <div class="tut-card">
+    <div class="tut-top">
+      <span class="tut-contador" id="tut-contador">Passo 1 de 1</span>
+      <div class="tut-top-acoes">
+        <button class="tut-link" id="tut-pular" onclick="tutorialPular()" aria-label="Pular apresentação">Pular<span class="tut-largo"> apresentação</span></button>
+        <button class="tut-fechar" onclick="tutorialFecharPorAgora()" aria-label="Fechar tutorial">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="tut-trilha" id="tut-trilha"></div>
+
+    <span class="tut-selo" id="tut-selo">Novidade</span>
+    <div class="tut-icone" id="tut-icone"></div>
+    <h2 class="tut-titulo" id="tut-titulo">—</h2>
+    <div class="tut-texto" id="tut-corpo"></div>
+
+    <label class="tut-check" id="tut-check-wrap" style="display:none">
+      <input type="checkbox" id="tut-nao-exibir" checked>
+      <span>
+        <span class="tut-check-txt">Não exibir este tutorial novamente</span>
+        <span class="tut-check-sub">Marcado, ele não aparece mais quando você entrar no app.</span>
+      </span>
+    </label>
+
+    <div class="tut-footer">
+      <button class="btn btn-ghost" id="tut-voltar" onclick="tutorialAnterior()">Voltar</button>
+      <button class="btn btn-primary" id="tut-avancar" onclick="tutorialAvancar()">Continuar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════
      JAVASCRIPT
 ════════════════════════════════════════════════ -->
 <script>
@@ -2785,6 +2958,7 @@ function bootApp() {
   applyVerse();
   navigate('dashboard');
   schedulePush();
+  verificarTutorial();   // passo a passo das mudanças, só até ser concluído
 }
 
 async function showForgot() {
@@ -2796,6 +2970,280 @@ async function showForgot() {
   } catch (e) {
     showToast(mensagemErroLogin(e?.code));
   }
+}
+
+/* ── TUTORIAL DE BOAS-VINDAS ─────────────────────────────────────────
+   O app mudou bastante — menu reorganizado em áreas, loja online
+   alimentada pela Central, login de verdade, IA. Quem entra depois dessas
+   mudanças vê um passo a passo curto explicando onde as coisas estão.
+
+   Quando o tutorial é concluído com a opção "não exibir novamente"
+   marcada, a versão vista fica guardada em cdg_config.tutorialVisto. Como
+   as configurações são sincronizadas pelo Firestore (central_config/app),
+   concluir no celular já vale para o computador.
+
+   É uma versão, não um sim/não: quando houver novidade suficiente para um
+   tutorial novo, basta aumentar TUTORIAL_VERSAO e ele volta a aparecer
+   uma vez em cada aparelho.
+
+   ── PARA DESLIGAR OU TIRAR O TUTORIAL ───────────────────────────────
+   Desligar: troque TUTORIAL_ATIVO para false, logo abaixo. Ele deixa de
+   aparecer no acesso e o atalho sai das Configurações — nada mais muda.
+
+   Tirar de vez: o tutorial não se mistura com o resto do app. É só apagar
+   estes quatro blocos e duas linhas, todos marcados com o mesmo título:
+     1. este bloco de código, até o fim do listener de teclado;
+     2. no <style>, o bloco "TUTORIAL DE BOAS-VINDAS" (classes .tut-*);
+     3. no <style>, dentro do @media (min-width:700px), as quatro regras
+        .tut-overlay/.tut-card do fim do bloco;
+     4. no HTML, o <div id="tutorial"> inteiro;
+     5. em bootApp(), a linha verificarTutorial();
+     6. no HTML da tela de configurações, o cartão <div id="card-ajuda">.
+   Nada fora dessa lista chama o tutorial. O que fica no aparelho é apenas
+   a marca cdg_config.tutorialVisto, inofensiva se ninguém a ler.        */
+const TUTORIAL_VERSAO = 1;
+const TUTORIAL_ATIVO  = true;
+
+const TUTORIAL_PASSOS = [
+  {
+    selo: 'Boas-vindas',
+    icone: '<path d="M12 3l1.8 4.9L18.7 9.7l-4.9 1.8L12 16.4l-1.8-4.9L5.3 9.7l4.9-1.8z"/><path d="M18.5 15.5l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7z"/>',
+    titulo: 'A Central está diferente',
+    texto: 'Nos últimos tempos a Central mudou bastante: o menu foi reorganizado por áreas, a loja online passou a ser alimentada daqui, o acesso ganhou conta com senha de verdade e a inteligência artificial entrou no dia a dia.',
+    itens: [
+      'São <strong>10 passos curtos</strong> mostrando onde cada coisa está agora.',
+      'Nada aqui altera seus dados — é só uma apresentação.'
+    ],
+    nota: 'Dá para sair a qualquer momento pelo ✕ e voltar depois em Configurações › Ajuda.'
+  },
+  {
+    selo: 'Mudou de lugar',
+    icone: '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>',
+    titulo: 'O menu agora é por áreas',
+    texto: 'Em vez de uma lista comprida, o menu tem cinco áreas que abrem e fecham. Toque numa área e os subitens levam direto à tela — e já na aba certa.',
+    itens: [
+      '<strong>Pedidos</strong> — todos os pedidos, agenda de entregas e clientes.',
+      '<strong>Financeiro</strong> — receitas, despesas, a receber, lucratividade e vendas avulsas.',
+      '<strong>Catálogo</strong> — produtos, materiais e níveis de estoque.',
+      '<strong>Loja online</strong> — tudo o que o cliente vê no site.',
+      '<strong>Inteligência IA</strong> — assistente, análise de clientes e a chave da API.'
+    ],
+    nota: 'No celular o botão <strong>Menu</strong> ficou no canto superior esquerdo, mais perto do polegar. No computador o menu vive aberto na lateral e o botão desaparece.'
+  },
+  {
+    selo: 'Tela inicial',
+    icone: '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+    titulo: 'O Início mostra o dia',
+    texto: 'A primeira tela resume o negócio de hoje. Os quatro indicadores do topo são atalhos: toque em um deles e a lista de pedidos abre já filtrada.',
+    itens: [
+      '<strong>Avisos de entrega</strong> de hoje e de amanhã, com ação rápida no WhatsApp.',
+      '<strong>Meta do mês</strong> com o quanto já foi faturado.',
+      '<strong>Alertas de estoque baixo</strong> antes de faltar material.',
+      'Entregas de hoje, de amanhã e dos próximos 7 dias, além dos pedidos atrasados.'
+    ],
+    nota: 'Quer ser avisada mesmo com o app fechado? Ative em Configurações › Notificações.'
+  },
+  {
+    selo: 'Dia a dia',
+    icone: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>',
+    titulo: 'Pedidos, agenda e clientes juntos',
+    texto: 'Pedido, data de entrega e cliente são a mesma conversa, então agora ficam na mesma área do menu.',
+    itens: [
+      'Filtre por situação nas fichinhas do topo: Novo, Em Produção, Pronto, Entregue.',
+      'No pedido, <strong>Importar dados de uma conversa</strong> lê o que a cliente escreveu e preenche os campos com ajuda da IA.',
+      '<strong>Ver por cliente</strong> agrupa o histórico de cada pessoa.',
+      'Ao concluir um pedido você registra o material usado e o desperdício — o estoque cai sozinho.'
+    ]
+  },
+  {
+    selo: 'Dinheiro',
+    icone: '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+    titulo: 'Financeiro em quatro abas',
+    texto: 'Cada subitem do menu abre a aba certa direto, sem precisar procurar.',
+    itens: [
+      '<strong>Receitas</strong> e <strong>Despesas</strong> — o que entrou e o que saiu.',
+      '<strong>A receber</strong> — pedidos com pagamento pendente ou parcial.',
+      '<strong>Lucratividade</strong> — quanto sobra de verdade, já descontando o material.',
+      '<strong>Vendas avulsas</strong> — venda de pronta entrega, sem abrir pedido.'
+    ]
+  },
+  {
+    selo: 'Catálogo',
+    icone: '<path d="M20.59 13.41 13.42 20.6a2 2 0 0 1-2.83 0L2 12.01V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',
+    titulo: 'Produtos e materiais conversam',
+    texto: 'Ao cadastrar um produto você diz de quais materiais ele é feito e em que quantidade. Com isso a Central calcula o custo e cuida do estoque.',
+    itens: [
+      '<strong>Produtos</strong> — preço, categoria, fotos e composição de materiais.',
+      '<strong>Materiais</strong> — o que você compra, com custo e estoque mínimo.',
+      '<strong>Níveis de estoque</strong> — o que está acabando e o histórico de entradas e saídas.'
+    ]
+  },
+  {
+    selo: 'Novidade grande',
+    icone: '<path d="M3 9h18"/><path d="M5 9V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v4"/><path d="M4 9h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M9 13h6"/>',
+    titulo: 'A Central alimenta a loja',
+    texto: 'O site do Graça em Papel não é mais editado por fora: o que você publica aqui aparece lá para as clientes, sem precisar de ninguém para mexer no site.',
+    itens: [
+      '<strong>Produtos na loja</strong> — escolha quais produtos do catálogo ficam à venda.',
+      '<strong>Categorias</strong> — como os produtos são agrupados na vitrine.',
+      '<strong>Galeria de fotos</strong> — os trabalhos que aparecem na página inicial.',
+      '<strong>Perguntas frequentes</strong> e <strong>Contato e sobre</strong> — texto, WhatsApp e Instagram da loja.'
+    ],
+    nota: 'Atalho: na tela de Produtos, o botão <strong>🛍️ Publicar na loja</strong> leva direto para lá.'
+  },
+  {
+    selo: 'Apoio',
+    icone: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+    titulo: 'Uma ajuda com inteligência',
+    texto: 'Duas ferramentas usam IA, sempre olhando apenas os dados do seu negócio.',
+    itens: [
+      '<strong>Assistente do negócio</strong> — pergunte em português: quais pedidos estão atrasados, quanto falta para a meta, quem são as clientes mais fiéis.',
+      '<strong>Análise de clientes</strong> — gera o perfil de compra de uma cliente, sugere produtos e escreve uma mensagem de reaproximação.'
+    ],
+    nota: 'Para funcionar, cadastre sua chave do Google Gemini em Configurações. Ela fica <strong>só neste aparelho</strong> — nunca vai para a nuvem.'
+  },
+  {
+    selo: 'Segurança',
+    icone: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
+    titulo: 'Sua conta e seus dados',
+    texto: 'A senha não fica mais escrita dentro do site. Agora o acesso é uma conta de verdade, com e-mail e senha conferidos no servidor.',
+    itens: [
+      'Esqueceu a senha? <strong>Esqueci minha senha</strong> envia um link para o seu e-mail.',
+      'Sem login, ninguém lê nem altera pedidos, financeiro ou clientes — nem pelo navegador.',
+      'Suas configurações (categorias, meta, versículo) <strong>acompanham você</strong> em qualquer aparelho.',
+      'Uma cópia dos dados fica guardada no aparelho, então o app abre rápido e aguenta uma internet ruim.'
+    ]
+  },
+  {
+    selo: 'Pronto',
+    icone: '<rect x="5" y="2" width="14" height="20" rx="2.5"/><line x1="11" y1="18" x2="13" y2="18"/><polyline points="9 9 12 12 15 9"/>',
+    titulo: 'Tenha a Central à mão',
+    texto: 'É só isso. Um último toque para o app ficar parecendo aplicativo no celular:',
+    itens: [
+      'No iPhone: botão compartilhar → <strong>Adicionar à Tela de Início</strong>.',
+      'No Android: menu do navegador → <strong>Instalar aplicativo</strong> (ou o botão em Configurações).',
+      'A tela se ajusta sozinha a celulares com recorte e a monitores grandes, e as cores ficaram mais fortes para ler no sol.'
+    ],
+    nota: 'Este tutorial continua disponível em <strong>Configurações › Ajuda</strong>, sempre que quiser rever.'
+  }
+];
+
+let _tutPasso = 0;
+
+// Já viu o tutorial desta versão neste aparelho (ou em outro, via sincronização)?
+function tutorialJaVisto(){
+  appConfig = loadO(K.C);
+  return Number(appConfig.tutorialVisto || 0) >= TUTORIAL_VERSAO;
+}
+
+// Chamado no fim do bootApp: aparece uma vez, depois do painel já desenhado
+function verificarTutorial(){
+  if (!TUTORIAL_ATIVO || tutorialJaVisto()) return;
+  setTimeout(() => abrirTutorial(), 550);
+}
+
+function abrirTutorial(){
+  _tutPasso = 0;
+  renderTutorialPasso();
+  document.getElementById('tutorial').classList.add('active');
+  closeSideNav();
+}
+
+function renderTutorialPasso(){
+  const passo = TUTORIAL_PASSOS[_tutPasso];
+  const total = TUTORIAL_PASSOS.length;
+  const ultimo = _tutPasso === total - 1;
+
+  document.getElementById('tut-contador').textContent = `Passo ${_tutPasso+1} de ${total}`;
+  document.getElementById('tut-selo').textContent = passo.selo;
+  document.getElementById('tut-icone').innerHTML = `<svg viewBox="0 0 24 24">${passo.icone}</svg>`;
+  document.getElementById('tut-titulo').textContent = passo.titulo;
+
+  // o texto vai dentro de um <span>: o li é flex e um <strong> solto viraria
+  // um item do flex, quebrando a linha no meio da frase
+  const itens = (passo.itens || []).map(i => `<li><span>${i}</span></li>`).join('');
+  document.getElementById('tut-corpo').innerHTML =
+    `<p>${passo.texto}</p>` +
+    (itens ? `<ul class="tut-lista">${itens}</ul>` : '') +
+    (passo.nota ? `<div class="tut-nota">${passo.nota}</div>` : '');
+
+  // trilha de progresso — cada traço volta ou avança para o passo dele
+  document.getElementById('tut-trilha').innerHTML = TUTORIAL_PASSOS.map((p, i) =>
+    `<button class="tut-passo-btn ${i === _tutPasso ? 'atual' : (i < _tutPasso ? 'visto' : '')}"
+             onclick="tutorialIrPara(${i})" aria-label="Passo ${i+1}: ${escAttr(p.titulo)}"></button>`
+  ).join('');
+
+  // a escolha de não ver mais fica no fim, junto do botão que a aplica
+  document.getElementById('tut-check-wrap').style.display = ultimo ? 'flex' : 'none';
+  document.getElementById('tut-pular').style.display = ultimo ? 'none' : 'inline-flex';
+  document.getElementById('tut-voltar').style.visibility = _tutPasso === 0 ? 'hidden' : 'visible';
+  document.getElementById('tut-avancar').textContent = ultimo ? 'Concluir' : 'Continuar';
+
+  const card = document.querySelector('#tutorial .tut-card');
+  if (card) card.scrollTop = 0;
+  document.getElementById('tut-avancar').focus({ preventScroll: true });
+}
+
+function tutorialIrPara(i){
+  if (i < 0 || i >= TUTORIAL_PASSOS.length) return;
+  _tutPasso = i;
+  renderTutorialPasso();
+}
+function tutorialAnterior(){ if (_tutPasso > 0) tutorialIrPara(_tutPasso - 1); }
+
+function tutorialAvancar(){
+  if (_tutPasso < TUTORIAL_PASSOS.length - 1) { tutorialIrPara(_tutPasso + 1); return; }
+  tutorialConcluir();
+}
+
+// Pular não encerra o tutorial: leva ao último passo, onde está a opção de
+// não exibir novamente. Assim ninguém dispensa o aviso sem ver a escolha.
+function tutorialPular(){ tutorialIrPara(TUTORIAL_PASSOS.length - 1); }
+
+function tutorialConcluir(){
+  const naoExibir = document.getElementById('tut-nao-exibir').checked;
+  if (naoExibir){
+    appConfig = loadO(K.C);
+    appConfig.tutorialVisto = TUTORIAL_VERSAO;
+    save(K.C, appConfig);   // grava aqui e sincroniza com os outros aparelhos
+  }
+  fecharTutorial();
+  showToast(naoExibir ? 'Tudo certo! Bom trabalho.'
+                      : 'Ok — o tutorial aparece de novo no próximo acesso.');
+}
+
+// ✕ e Esc: fecha sem decidir nada, então volta no próximo acesso
+function tutorialFecharPorAgora(){
+  fecharTutorial();
+  if (!tutorialJaVisto()) showToast('Tutorial disponível em Configurações › Ajuda.');
+}
+
+function fecharTutorial(){
+  document.getElementById('tutorial').classList.remove('active');
+}
+
+// Rever pelas Configurações — aqui a opção começa desmarcada, para uma
+// releitura não apagar por acidente o que já estava decidido
+function reverTutorial(){
+  const check = document.getElementById('tut-nao-exibir');
+  if (check) check.checked = !tutorialJaVisto();
+  abrirTutorial();
+}
+
+// Teclado: setas passeiam pelos passos, Esc fecha
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('tutorial')?.classList.contains('active')) return;
+  if (e.key === 'Escape')     { e.preventDefault(); tutorialFecharPorAgora(); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); tutorialAvancar(); }
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); tutorialAnterior(); }
+});
+
+// Desligado por TUTORIAL_ATIVO: o atalho das Configurações também sai de cena
+if (!TUTORIAL_ATIVO) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const card = document.getElementById('card-ajuda');
+    if (card) card.style.display = 'none';
+  });
 }
 
 /* ── NAVIGATION ──────────────────────────────────── */
