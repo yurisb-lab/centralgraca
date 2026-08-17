@@ -864,6 +864,9 @@ select.form-control {
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, updateDoc, deleteDoc, writeBatch }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
+           updatePassword, sendPasswordResetEmail, EmailAuthProvider, reauthenticateWithCredential }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey:            "AIzaSyBdoXn-ECybMDTL-DvRWr7m3ZCkHhGpJC8",
@@ -876,6 +879,42 @@ select.form-control {
 
   const fbApp = initializeApp(firebaseConfig);
   const db    = getFirestore(fbApp);
+  const auth  = getAuth(fbApp);
+
+  /* ── AUTENTICAÇÃO ────────────────────────────────────────────────
+     Antes a senha era conferida em JavaScript no próprio navegador, com o
+     valor no código-fonte. Quem abrisse as ferramentas de desenvolvedor
+     passava direto. Agora quem confere é o Firebase, e é o login dele que
+     dá acesso aos dados — as regras do Firestore recusam quem não estiver
+     autenticado.                                                          */
+  window.fbEntrar = async function(email, senha) {
+    const cred = await signInWithEmailAndPassword(auth, email, senha);
+    return cred.user;
+  };
+
+  window.fbSair = async function() {
+    await signOut(auth);
+  };
+
+  window.fbUsuarioAtual = () => auth.currentUser;
+
+  window.fbTrocarSenha = async function(senhaAtual, senhaNova) {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Sessão expirada. Entre novamente.');
+    // O Firebase exige confirmação recente da senha para trocá-la
+    await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, senhaAtual));
+    await updatePassword(user, senhaNova);
+  };
+
+  window.fbRecuperarSenha = async function(email) {
+    await sendPasswordResetEmail(auth, email);
+  };
+
+  // Fonte da verdade da sessão: o próprio Firebase, não uma marca no aparelho
+  onAuthStateChanged(auth, (user) => {
+    if (user) { if (window.aoEntrar)  window.aoEntrar(user); }
+    else      { if (window.aoSair)    window.aoSair(); }
+  });
 
   /* ── ESPELHO DO QUE JÁ ESTÁ NO FIRESTORE ─────────────────────────
      Guarda, por coleção, o conteúdo de cada documento como já foi gravado.
@@ -1043,10 +1082,16 @@ select.form-control {
     </div>
 
     <div class="form-group">
-      <label class="form-label">Senha</label>
-      <input type="password" class="form-control" id="login-password" placeholder="••••••••" autocomplete="off">
+      <label class="form-label">E-mail</label>
+      <input type="email" class="form-control" id="login-email" placeholder="seu@email.com"
+             autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('login-password').focus()">
     </div>
-    <button class="btn btn-primary" onclick="doLogin()">Entrar</button>
+    <div class="form-group">
+      <label class="form-label">Senha</label>
+      <input type="password" class="form-control" id="login-password" placeholder="••••••••"
+             autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn btn-primary" id="login-btn" onclick="doLogin()">Entrar</button>
     <a href="#" class="forgot-link" onclick="showForgot()">Esqueci minha senha</a>
   </div>
 </div>
@@ -2064,13 +2109,14 @@ select.form-control {
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title">Alterar senha</div>
+    <p style="font-size:12px;color:var(--text-soft);margin:-14px 0 18px;line-height:1.6">A senha é a mesma em todos os aparelhos — trocar aqui vale para todos.</p>
     <div class="form-group">
       <label class="form-label">Senha atual</label>
       <input type="password" class="form-control" id="perfil-senha-atual" placeholder="Digite a senha atual">
     </div>
     <div class="form-group">
-      <label class="form-label">Nova senha (deixe vazio para não alterar)</label>
-      <input type="password" class="form-control" id="perfil-senha-nova" placeholder="Nova senha">
+      <label class="form-label">Nova senha (mínimo 6 caracteres)</label>
+      <input type="password" class="form-control" id="perfil-senha-nova" placeholder="Nova senha" autocomplete="new-password">
     </div>
     <div class="form-group">
       <label class="form-label">Confirmar nova senha</label>
@@ -2382,6 +2428,10 @@ let _fbReady = false;
 // Chaves de configuração que ficam só neste aparelho e nunca vão para o
 // Firestore: a chave da IA é um segredo pessoal e a senha em texto puro não
 // deve ir para um banco cujas regras ainda são abertas.
+// A chave da IA é um segredo pessoal e não sai deste aparelho.
+// senhaCustom não é mais usada — a senha agora é do Firebase — mas segue na
+// lista para que um valor antigo, ainda gravado em algum aparelho, jamais
+// seja enviado ao Firestore.
 window.CONFIG_SOMENTE_LOCAL = ['geminiApiKey', 'senhaCustom'];
 
 // Manda para o Firestore a parte compartilhável das configurações, para que
@@ -2427,6 +2477,17 @@ const fbDel = (colName, id) => {
   if (window.fbDeleteDoc) window.fbDeleteDoc(colName, String(id)).catch(()=>{});
 };
 
+// Limpa a senha que versões anteriores guardavam neste aparelho
+(function limparSenhaAntiga(){
+  try {
+    const cfg = JSON.parse(localStorage.getItem('cdg_config') || '{}');
+    if (cfg && 'senhaCustom' in cfg) {
+      delete cfg.senhaCustom;
+      localStorage.setItem('cdg_config', JSON.stringify(cfg));
+    }
+  } catch {}
+})();
+
 let currentUser = loadO(K.U);
 let appConfig   = loadO(K.C);
 let currentDetailId = null;
@@ -2449,43 +2510,81 @@ function initDemo() {
   guardarLocal('cdg_demo_done', '1');
 }
 /* ── AUTH ────────────────────────────────────────── */
-const USERS = [{ email:'lanekun@gmail.com', senha:'graciosa' }];
-const getSenhaAtual = () => { appConfig = loadO(K.C); return appConfig.senhaCustom || USERS[0].senha; };
 
-function doLogin() {
-  const email = 'lanekun@gmail.com';
+// Mensagens do Firebase traduzidas — o código cru não diz nada a quem usa
+function mensagemErroLogin(codigo) {
+  switch (codigo) {
+    case 'auth/invalid-email':        return 'E-mail inválido.';
+    case 'auth/user-disabled':        return 'Esta conta foi desativada.';
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':   return 'E-mail ou senha incorretos.';
+    case 'auth/too-many-requests':    return 'Muitas tentativas. Aguarde alguns minutos e tente de novo.';
+    case 'auth/network-request-failed': return 'Sem conexão. Verifique a internet e tente de novo.';
+    case 'auth/weak-password':        return 'A senha precisa ter pelo menos 6 caracteres.';
+    case 'auth/requires-recent-login':return 'Por segurança, entre novamente antes de trocar a senha.';
+    default: return 'Não foi possível entrar. Tente de novo.';
+  }
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
   const pwd   = document.getElementById('login-password').value;
-  if (!pwd) { showToast('Informe a senha'); return; }
-  if (pwd !== getSenhaAtual()) { showToast('Senha incorreta'); return; }
+  if (!email) { showToast('Informe o e-mail'); return; }
+  if (!pwd)   { showToast('Informe a senha'); return; }
+  if (!window.fbEntrar) { showToast('Ainda conectando ao servidor. Tente em instantes.'); return; }
 
-  currentUser = { email };
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true; btn.textContent = 'Entrando...';
+  try {
+    await window.fbEntrar(email, pwd);
+    // O resto acontece em aoEntrar(), disparado pelo próprio Firebase
+  } catch (e) {
+    showToast(mensagemErroLogin(e?.code));
+    btn.disabled = false; btn.textContent = 'Entrar';
+  }
+}
+
+// Chamado pelo Firebase quando há sessão válida — no login e ao reabrir o app
+let _abrindoApp = false;
+window.aoEntrar = function(user) {
+  if (_abrindoApp) return;
+  _abrindoApp = true;
+  currentUser = { email: user.email, uid: user.uid };
   save(K.U, currentUser);
-
-  // Traz a cópia local para a memória e sincroniza do Firestore antes de abrir
   showToast('Carregando dados...');
   hidratarCache()
     .catch(() => {})
     .then(() => window.fbSyncOnBoot ? window.fbSyncOnBoot() : null)
     .catch(() => {})
     .then(() => {
-      currentUser = loadO(K.U);
       initDemo();
       bootApp();
+      _abrindoApp = false;
+      const btn = document.getElementById('login-btn');
+      if (btn) { btn.disabled = false; btn.textContent = 'Entrar'; }
     });
-}
+};
 
-function doLogout() {
-  if (!confirm('Sair da conta?')) return;
-  save(K.U, {});
+// Chamado pelo Firebase quando não há sessão — inclusive se ela expirar
+window.aoSair = function() {
   currentUser = {};
+  save(K.U, {});
   document.getElementById('app').classList.remove('active');
   document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('login-password').value = '';
-  document.getElementById('fab').style.display = 'none';
+  const pwd = document.getElementById('login-password');
+  if (pwd) pwd.value = '';
+  ['fab','side-nav','menu-fab','side-nav-overlay'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
   closeSideNav();
-  document.getElementById('side-nav').style.display = 'none';
-  document.getElementById('menu-fab').style.display = 'none';
-  document.getElementById('side-nav-overlay').style.display = 'none';
+};
+
+async function doLogout() {
+  if (!confirm('Sair da conta?')) return;
+  try { await window.fbSair(); } catch { /* aoSair() ainda limpa a tela */ }
+  window.aoSair();
 }
 
 function bootApp() {
@@ -2501,8 +2600,15 @@ function bootApp() {
   schedulePush();
 }
 
-function showForgot() {
-  alert('Recuperação de senha:\nEntre em contato com o administrador ou redefina via Firebase Console.');
+async function showForgot() {
+  const email = (document.getElementById('login-email').value || '').trim();
+  if (!email) { showToast('Informe o e-mail acima para receber o link'); return; }
+  try {
+    await window.fbRecuperarSenha(email);
+    alert('Enviamos um link de redefinição para ' + email + '.\n\nVerifique a caixa de entrada e o spam.');
+  } catch (e) {
+    showToast(mensagemErroLogin(e?.code));
+  }
 }
 
 /* ── NAVIGATION ──────────────────────────────────── */
@@ -6128,25 +6234,25 @@ function showProfileConfig(){
   openModal('modal-perfil');
 }
 
-function savePerfil(){
+async function savePerfil(){
   const senhaAt  = document.getElementById('perfil-senha-atual').value;
   const senhaNova= document.getElementById('perfil-senha-nova').value;
   const senhaConf= document.getElementById('perfil-senha-conf').value;
 
-  // Verificar senha atual (contra o valor persistido, não a constante fixa)
-  if (!senhaAt) { showToast('Informe a senha atual'); return; }
-  if (senhaAt !== getSenhaAtual()) { showToast('Senha atual incorreta'); return; }
+  if (!senhaAt)   { showToast('Informe a senha atual'); return; }
+  if (!senhaNova) { showToast('Informe a nova senha'); return; }
+  if (senhaNova !== senhaConf) { showToast('As senhas não coincidem'); return; }
+  if (senhaNova.length < 6)    { showToast('A senha precisa ter pelo menos 6 caracteres'); return; }
 
-  if (senhaNova) {
-    if (senhaNova !== senhaConf) { showToast('As senhas não coincidem'); return; }
-    if (senhaNova.length < 4)    { showToast('Senha muito curta (mín. 4 caracteres)'); return; }
-    appConfig = loadO(K.C);
-    appConfig.senhaCustom = senhaNova;
-    save(K.C, appConfig);
+  try {
+    // Trocada no Firebase, então vale em todos os aparelhos de uma vez
+    await window.fbTrocarSenha(senhaAt, senhaNova);
+    closeModal('modal-perfil');
+    showToast('Senha atualizada com sucesso!');
+  } catch (e) {
+    showToast(e?.code === 'auth/wrong-password' || e?.code === 'auth/invalid-credential'
+      ? 'Senha atual incorreta' : mensagemErroLogin(e?.code));
   }
-
-  closeModal('modal-perfil');
-  showToast('Senha atualizada com sucesso!');
 }
 
 /* ── CHAVE DA API GEMINI ─────────────────────────── */
@@ -6256,24 +6362,12 @@ function installPWA(){
 /* ── INIT ────────────────────────────────────────── */
 window.addEventListener('DOMContentLoaded', () => {
   applyVerse();
-  // Só abre o app se esta sessão de navegador fez login (K.U salvo localmente)
-  const session = loadO(K.U);
-  if (session?.email) {
-    // Já estava logado neste navegador — sincroniza e abre
-    const doSync = () => {
-      hidratarCache()
-        .catch(() => {})
-        .then(() => window.fbSyncOnBoot ? window.fbSyncOnBoot() : null)
-        .catch(() => {})
-        .then(() => { initDemo(); bootApp(); });
-    };
-    if (window.FB?.ready) { doSync(); }
-    else {
-      window.addEventListener('fb-ready', doSync, { once: true });
-      setTimeout(doSync, 4000);
-    }
-  }
-  // Se não tem sessão, fica na tela de login — não faz nada
+  // Quem decide se há sessão é o Firebase: o onAuthStateChanged do módulo
+  // chama aoEntrar() ou aoSair(). Nada de "logado" gravado neste aparelho.
+  // O e-mail do último acesso volta preenchido só por conveniência.
+  const ultimo = loadO(K.U);
+  const campo = document.getElementById('login-email');
+  if (campo && ultimo?.email) campo.value = ultimo.email;
 });
 </script>
 </body>

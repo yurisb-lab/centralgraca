@@ -1,0 +1,74 @@
+rules_version = '2';
+
+// ════════════════════════════════════════════════════════════════════
+//  Regras de segurança do Firestore — Graça em Papel
+//
+//  Cole este conteúdo em: Firebase Console > Firestore Database > Regras,
+//  e clique em Publicar.
+//
+//  A ideia é simples: existem dois tipos de dado no banco.
+//
+//  1. O que a LOJA mostra para os clientes (produtos, categorias, galeria,
+//     perguntas frequentes e contato). Qualquer pessoa pode LER — é uma
+//     vitrine pública, precisa abrir sem login. Só a Central ESCREVE.
+//
+//  2. O que é do NEGÓCIO (pedidos, vendas, financeiro, clientes, estoque).
+//     Nem ler nem escrever sem estar autenticado. Ninguém além de você.
+//
+//  Antes destas regras o banco aceitava leitura e escrita de qualquer
+//  origem: dava para alterar ou apagar tudo pelo console do navegador, sem
+//  passar pelo app.
+// ════════════════════════════════════════════════════════════════════
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Está logado no app da Central?
+    function autenticado() {
+      return request.auth != null;
+    }
+
+    // ── 1. VITRINE — leitura pública, escrita só da Central ──────────
+    match /products/{doc} {
+      allow read: if true;
+      allow write: if autenticado();
+    }
+    match /categories/{doc} {
+      allow read: if true;
+      allow write: if autenticado();
+    }
+    match /faqs/{doc} {
+      allow read: if true;
+      allow write: if autenticado();
+    }
+    match /gallery/{doc} {
+      allow read: if true;
+      allow write: if autenticado();
+    }
+    // WhatsApp, Instagram e o texto "Sobre" exibidos na loja
+    match /config/{doc} {
+      allow read: if true;
+      allow write: if autenticado();
+    }
+
+    // ── 2. DADOS DO NEGÓCIO — nada sem login ─────────────────────────
+    match /pedidos/{doc}                 { allow read, write: if autenticado(); }
+    match /receitas/{doc}                { allow read, write: if autenticado(); }
+    match /despesas/{doc}                { allow read, write: if autenticado(); }
+    match /vendas/{doc}                  { allow read, write: if autenticado(); }
+    match /materiais/{doc}               { allow read, write: if autenticado(); }
+    match /produtos_catalogo/{doc}       { allow read, write: if autenticado(); }
+    match /estoque_movimentacoes/{doc}   { allow read, write: if autenticado(); }
+    match /clientes/{doc}                { allow read, write: if autenticado(); }
+    match /chat_historico/{doc}          { allow read, write: if autenticado(); }
+    match /ia_perfis/{doc}               { allow read, write: if autenticado(); }
+    match /central_config/{doc}          { allow read, write: if autenticado(); }
+
+    // ── 3. Qualquer coleção não listada acima fica bloqueada ─────────
+    // Se um dia surgir uma coleção nova, ela nasce fechada em vez de
+    // aberta por esquecimento. Basta adicionar a regra dela aqui.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
