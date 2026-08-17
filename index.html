@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#1F6C99">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -63,6 +63,18 @@
   --font-display: 'Cormorant Garamond', Georgia, serif;
   --font-body:    'DM Sans', system-ui, sans-serif;
   --font-script:  'Pinyon Script', cursive;
+
+  /* Recortes da tela (notch, ilha dinâmica, indicador de home).
+     O viewport usa `viewport-fit=cover`, então o conteúdo vai até a borda:
+     é aqui que ele volta para dentro da área segura. Em aparelho sem
+     recorte todos valem 0px e nada muda. */
+  --sa-top:    env(safe-area-inset-top, 0px);
+  --sa-bottom: env(safe-area-inset-bottom, 0px);
+  --sa-left:   env(safe-area-inset-left, 0px);
+  --sa-right:  env(safe-area-inset-right, 0px);
+
+  /* Largura de leitura confortável no desktop. */
+  --content-max: 1080px;
 }
 
 /* ── RESET ──────────────────────────────────────── */
@@ -77,7 +89,7 @@ body {
     var(--cream);
   background-attachment: fixed;
   color: var(--text);
-  min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
   font-size: 15px;
   line-height: 1.5;
@@ -103,7 +115,7 @@ a { color: inherit; text-decoration: none; }
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   background: var(--cream);
-  padding: 24px;
+  padding: calc(24px + var(--sa-top)) calc(24px + var(--sa-right)) calc(24px + var(--sa-bottom)) calc(24px + var(--sa-left));
   position: relative; overflow: hidden;
 }
 /* decorative arcs */
@@ -205,6 +217,14 @@ select.form-control {
   background-position: right 13px center;
   padding-right: 36px;
 }
+/* O iOS dá zoom sozinho quando um campo com menos de 16px recebe foco.
+   A saída certa é o campo ter 16px onde se usa o dedo — e não travar o
+   pinch-to-zoom da página inteira, que quem enxerga pouco precisa. */
+@media (pointer: coarse) {
+  .form-control,
+  .search-wrap input,
+  .assist-input-wrap textarea { font-size: 16px; }
+}
 
 /* buttons */
 .btn {
@@ -245,8 +265,9 @@ select.form-control {
 /* topbar */
 .topbar {
   background: var(--surface);
-  padding: 0 10px;
-  height: 58px;
+  /* a faixa da barra de status vira padding: a altura útil segue 58px */
+  padding: var(--sa-top) calc(10px + var(--sa-right)) 0 calc(10px + var(--sa-left));
+  height: calc(58px + var(--sa-top));
   display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
   border-bottom: 1px solid var(--border-light);
   position: sticky; top: 0; z-index: 200;
@@ -287,7 +308,7 @@ select.form-control {
 /* content */
 .content {
   flex: 1; overflow-y: auto;
-  padding: 20px 16px 90px;
+  padding: 20px calc(16px + var(--sa-right)) calc(90px + var(--sa-bottom)) calc(16px + var(--sa-left));
   overscroll-behavior: contain;
 }
 
@@ -308,13 +329,17 @@ select.form-control {
 /* the sliding drawer / permanent sidebar itself */
 .side-nav {
   position: fixed; top: 0; left: 0; bottom: 0;
-  width: var(--side-nav-w);
+  /* a gaveta encosta na borda esquerda: em paisagem com recorte ela
+     cresce o tanto do recorte e empurra o conteúdo para dentro */
+  width: calc(var(--side-nav-w) + var(--sa-left));
+  padding-left: var(--sa-left);
   background: var(--surface);
   border-right: 1px solid var(--border-light);
   box-shadow: var(--shadow-lg);
   z-index: 500;
   display: flex; flex-direction: column;
-  padding: 22px 0 14px;
+  padding-top: calc(22px + var(--sa-top));
+  padding-bottom: calc(14px + var(--sa-bottom));
   overflow-y: auto;
   transform: translateX(-100%);
   transition: transform .3s cubic-bezier(.34,1.05,.64,1);
@@ -425,11 +450,14 @@ select.form-control {
   /* sidebar já está sempre aberta: some com o botão, mas mantém a coluna
      do grid para o logo/título continuarem centralizados */
   .topbar-menu { visibility: hidden; pointer-events: none; }
-  #app { padding-left: var(--side-nav-w); }
+  #app { padding-left: calc(var(--side-nav-w) + var(--sa-left)); }
 }
 
 /* ── SCREENS ─────────────────────────────────────── */
-.screen { display: none; }
+/* A barra de rolagem continua na borda da janela; quem tem largura
+   limitada é o conteúdo, para a linha de texto não ficar longa demais
+   em monitor grande. */
+.screen { display: none; max-width: var(--content-max); margin-inline: auto; }
 .screen.active { display: block; }
 
 /* ── CARDS ──────────────────────────────────────── */
@@ -677,7 +705,7 @@ select.form-control {
 .modal {
   background: var(--surface);
   border-radius: var(--r-xl) var(--r-xl) 0 0;
-  padding: 24px 24px 40px;
+  padding: 24px 24px calc(40px + var(--sa-bottom));
   width: 100%; max-width: 500px;
   max-height: 92dvh; overflow-y: auto;
   animation: slideUp .28s cubic-bezier(.34,1.1,.64,1);
@@ -702,8 +730,12 @@ select.form-control {
   padding: 11px 0; border-bottom: 1px solid var(--border-light);
 }
 .detail-row:last-child { border-bottom: none; }
-.detail-key { font-size: 12px; font-weight: 600; letter-spacing: .3px; color: var(--text-soft); text-transform: uppercase; font-size: 11px; }
-.detail-val { font-size: 14px; color: var(--text); font-weight: 500; text-align: right; max-width: 58%; }
+.detail-key { font-size: 11px; font-weight: 600; letter-spacing: .3px; color: var(--text-soft); text-transform: uppercase; flex-shrink: 0; }
+/* o valor toma a sobra e quebra linha, em vez de ficar preso a 58% */
+.detail-val {
+  font-size: 14px; color: var(--text); font-weight: 500; text-align: right;
+  flex: 1; min-width: 0; padding-left: 14px; overflow-wrap: anywhere;
+}
 .progress-track { height: 6px; background: var(--cream-dark); border-radius: 3px; overflow: hidden; margin-top: 10px; }
 .progress-fill { height: 100%; background: linear-gradient(90deg, var(--blue), var(--rose-light)); border-radius: 3px; transition: width .4s ease; }
 .progress-legend { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-soft); margin-top: 5px; }
@@ -814,7 +846,9 @@ select.form-control {
 
 /* ── FAB ─────────────────────────────────────────── */
 .fab {
-  position: fixed; bottom: 22px; right: 18px;
+  position: fixed;
+  bottom: calc(22px + var(--sa-bottom));
+  right: calc(18px + var(--sa-right));
   width: 52px; height: 52px; border-radius: 50%;
   background: linear-gradient(135deg, var(--blue-dark), var(--rose));
   border: none; color: white;
@@ -828,10 +862,13 @@ select.form-control {
 
 /* ── TOAST ───────────────────────────────────────── */
 .toast {
-  position: fixed; bottom: 84px; left: 50%; transform: translateX(-50%);
+  position: fixed;
+  bottom: calc(84px + var(--sa-bottom)); left: 50%; transform: translateX(-50%);
   background: var(--text); color: white;
   padding: 11px 22px; border-radius: 22px;
-  font-size: 13px; font-weight: 500; white-space: nowrap;
+  font-size: 13px; font-weight: 500;
+  /* em tela estreita o aviso quebra em vez de vazar pela borda */
+  max-width: calc(100vw - 32px); white-space: normal; text-align: center;
   z-index: 3000; animation: toastIn 2.6s ease forwards;
   border: 1px solid rgba(255,255,255,.1);
 }
@@ -924,6 +961,33 @@ select.form-control {
   font-size: 80px; line-height: 1;
   position: absolute; right: -10px; bottom: -16px;
   pointer-events: none; user-select: none;
+}
+
+/* ── TABLET / DESKTOP ────────────────────────────────
+   Fica no fim da folha de propósito: são sobreposições das regras de
+   celular acima, e classe com classe quem vem depois vence.
+   Abaixo de 700px nada aqui vale — o layout de celular segue intacto. */
+@media (min-width: 700px) {
+  .content { padding-top: 24px; }
+
+  /* os quatro indicadores do painel cabem numa linha só */
+  .stats-grid { grid-template-columns: repeat(4, 1fr); }
+  /* auto-fit: com 4 blocos dá 4 colunas, com 2 eles dividem a linha */
+  .fin-grid   { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+
+  /* a modal deixa de ser folha colada no rodapé e vira caixa centrada */
+  .modal-overlay { align-items: center; padding: 24px; }
+  .modal {
+    border-radius: var(--r-xl);
+    padding: 28px;
+    max-height: 86dvh;
+    animation: modalPop .22s cubic-bezier(.34,1.1,.64,1);
+  }
+  .modal-handle { display: none; }
+}
+@keyframes modalPop {
+  from { transform: translateY(14px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
 }
 </style>
 
