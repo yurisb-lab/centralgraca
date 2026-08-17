@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#2C7FB0">
+<meta name="theme-color" content="#1F6C99">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -22,38 +22,44 @@
 
 <style>
 /* ── TOKENS ─────────────────────────────────────── */
+/* Paleta compartilhada com a vitrine (Graça em Papel).
+   Os tons foram escurecidos até passarem no contraste mínimo do WCAG AA
+   sobre o fundo creme: em tela clara a versão anterior sumia. Quem é fundo
+   continua claro; quem vira texto tem uma variante `-deep`. */
 :root {
-  --blue:        #4FA3D1;   /* vivid sky blue, from logo but brighter */
-  --blue-dark:   #2C7FB0;
-  --blue-deep:   #1E5C85;
-  --blue-light:  #A9DBF2;
-  --blue-pale:   #EAF7FC;
-  --rose:        #F0709A;   /* juicy pink/rose, from logo but saturated */
-  --rose-dark:   #E14B7E;
-  --rose-light:  #FBC1D6;
-  --rose-pale:   #FFEEF4;
-  --cream:       #FFF8F2;   /* warm, slightly pinker background */
-  --cream-dark:  #FBEADD;
-  --gold:        #E8B84B;   /* brighter gold ring */
-  --text:        #3A2A32;
-  --text-mid:    #7A5F6A;
-  --text-soft:   #AD8F98;
+  --blue:        #3E96C8;   /* azul do logo — fundos, bordas e preenchimentos */
+  --blue-dark:   #1F6C99;   /* azul de texto: 5.7:1 no branco */
+  --blue-deep:   #14496B;
+  --blue-light:  #8CCBE8;
+  --blue-pale:   #DFF1FA;
+  --rose:        #E85C8C;   /* rosa do logo — preenchimentos */
+  --rose-dark:   #C93368;   /* rosa de texto: 5.4:1 no branco */
+  --rose-light:  #F5A8C4;
+  --rose-pale:   #FFE7F0;
+  --cream:       #F7EDE4;   /* fundo creme, mais profundo p/ o branco saltar */
+  --cream-dark:  #F0DCCB;
+  --gold:        #D9A32F;   /* dourado — anéis, bordas, detalhes */
+  --gold-deep:   #8A6512;   /* dourado de texto: 5.3:1 no branco */
+  --text:        #2B1D24;
+  --text-mid:    #5E4550;
+  --text-soft:   #806571;   /* 5.2:1 no branco — legível em rótulos miúdos */
+  --text-faint:  #A98A96;   /* só para o que é intencionalmente apagado */
   --surface:     #FFFFFF;
-  --border:      #F3DDE4;
-  --border-light:#F8E9EE;
-  --success:     #4FB88A;
-  --warning:     #EFA23E;
-  --danger:      #E8506E;
+  --border:      #B98FA1;   /* bordas de campo/botão: 3:1, visíveis */
+  --border-light:#E0C3CF;   /* divisórias e contorno de cartão */
+  --success:     #17805A;
+  --warning:     #D9821C;
+  --danger:      #D12E51;
   --info:        var(--blue);
 
   --r-sm: 10px;
   --r-md: 16px;
   --r-lg: 24px;
   --r-xl: 32px;
-  --shadow-xs: 0 1px 4px rgba(180,60,100,.08);
-  --shadow-sm: 0 2px 10px rgba(180,60,100,.11);
-  --shadow-md: 0 6px 24px rgba(180,60,100,.14);
-  --shadow-lg: 0 12px 40px rgba(180,60,100,.18);
+  --shadow-xs: 0 1px 4px rgba(120,45,75,.12);
+  --shadow-sm: 0 3px 12px rgba(120,45,75,.16);
+  --shadow-md: 0 8px 26px rgba(120,45,75,.20);
+  --shadow-lg: 0 14px 44px rgba(120,45,75,.24);
   --font-display: 'Cormorant Garamond', Georgia, serif;
   --font-body:    'DM Sans', system-ui, sans-serif;
   --font-script:  'Pinyon Script', cursive;
@@ -65,9 +71,9 @@ html { -webkit-tap-highlight-color: transparent; }
 body {
   font-family: var(--font-body);
   background:
-    radial-gradient(ellipse 70% 40% at 15% 0%, rgba(79,163,209,.20) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 45% at 85% 15%, rgba(240,112,154,.22) 0%, transparent 60%),
-    radial-gradient(ellipse 55% 35% at 75% 100%, rgba(232,184,75,.14) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 40% at 15% 0%, rgba(62,150,200,.30) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 45% at 85% 15%, rgba(232,92,140,.30) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 35% at 75% 100%, rgba(217,163,47,.22) 0%, transparent 60%),
     var(--cream);
   background-attachment: fixed;
   color: var(--text);
@@ -105,9 +111,9 @@ a { color: inherit; text-decoration: none; }
   content: '';
   position: absolute; inset: 0;
   background:
-    radial-gradient(ellipse 70% 40% at 15% 0%, rgba(79,163,209,.20) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 45% at 85% 15%, rgba(240,112,154,.22) 0%, transparent 60%),
-    radial-gradient(ellipse 55% 35% at 75% 100%, rgba(232,184,75,.14) 0%, transparent 60%);
+    radial-gradient(ellipse 70% 40% at 15% 0%, rgba(62,150,200,.30) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 45% at 85% 15%, rgba(232,92,140,.30) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 35% at 75% 100%, rgba(217,163,47,.22) 0%, transparent 60%);
   pointer-events: none;
 }
 .login-card {
@@ -136,7 +142,7 @@ a { color: inherit; text-decoration: none; }
   font-weight: 500;
   letter-spacing: 3px;
   text-transform: uppercase;
-  color: var(--rose);
+  color: var(--rose-dark);
   display: block;
   margin-top: 2px;
 }
@@ -144,7 +150,7 @@ a { color: inherit; text-decoration: none; }
   width: 40px; height: 1px;
   background: var(--gold);
   margin: 16px auto 20px;
-  opacity: .6;
+  opacity: .9;
 }
 
 /* verse */
@@ -189,12 +195,12 @@ a { color: inherit; text-decoration: none; }
 }
 .form-control:focus {
   border-color: var(--blue);
-  box-shadow: 0 0 0 3px rgba(138,175,192,.18);
+  box-shadow: 0 0 0 3px rgba(31,108,153,.22);
 }
 .form-control[readonly] { background: var(--cream); color: var(--text-mid); }
 textarea.form-control { resize: vertical; min-height: 80px; }
 select.form-control {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M5 6L0 0h10z' fill='%239B9089'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M5 6L0 0h10z' fill='%236B5560'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 13px center;
   padding-right: 36px;
@@ -493,7 +499,7 @@ select.form-control {
 .fin-tile-value.green { color: var(--success); }
 .fin-tile-value.red { color: var(--danger); }
 .fin-tile-value.blue { color: var(--blue-dark); }
-.fin-tile-value.gold { color: var(--gold); }
+.fin-tile-value.gold { color: var(--gold-deep); }
 
 /* ── BADGES / STATUS ─────────────────────────────── */
 .badge {
@@ -503,9 +509,9 @@ select.form-control {
   border: 1px solid transparent;
 }
 .badge-novo        { background: var(--blue-pale);  color: var(--blue-deep);  border-color: var(--blue-light); }
-.badge-emproducao  { background: #FFF3E0;             color: #C0701A;           border-color: #FBD9A6; }
-.badge-pronto      { background: #E8F8EF;             color: #1F9C5C;           border-color: #A9E8C6; }
-.badge-entregue    { background: #F6EEFC;             color: #9256D9;           border-color: #E1C9F5; }
+.badge-emproducao  { background: #FFF3E0;             color: #9A5A0F;           border-color: #F3C87F; }
+.badge-pronto      { background: #E8F8EF;             color: #157A46;           border-color: #8FDDB4; }
+.badge-entregue    { background: #F6EEFC;             color: #7233C4;           border-color: #D2B0F0; }
 .badge-cancelado   { background: var(--rose-pale);   color: var(--rose-dark);  border-color: var(--rose-light); }
 
 /* ── PEDIDO CARD ─────────────────────────────────── */
@@ -541,7 +547,7 @@ select.form-control {
   border-radius:50%; background:rgba(0,0,0,.55); color:#fff; font-size:11px; line-height:1; padding:0;
 }
 .vit-slot-capa {
-  position:absolute; bottom:0; left:0; right:0; background:rgba(122,155,181,.9);
+  position:absolute; bottom:0; left:0; right:0; background:rgba(31,108,153,.92);
   color:#fff; font-size:8px; text-align:center; padding:2px 0; letter-spacing:.4px;
 }
 .vit-badge {
@@ -656,7 +662,7 @@ select.form-control {
   font-size: 14px; color: var(--text); background: var(--surface);
   outline: none; transition: border-color .2s, box-shadow .2s;
 }
-.search-wrap input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(138,175,192,.18); }
+.search-wrap input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(31,108,153,.22); }
 
 /* ── CHIPS ───────────────────────────────────────── */
 .chips {
@@ -713,7 +719,7 @@ select.form-control {
 }
 .cal-day:hover { background: var(--blue-pale); }
 .cal-day.today { background: var(--blue-dark); color: white; font-weight: 700; }
-.cal-day.other { color: var(--border); }
+.cal-day.other { color: var(--text-faint); }
 .cal-day.has-ev::after {
   content: '';
   position: absolute; bottom: 4px;
@@ -847,12 +853,12 @@ select.form-control {
 .cfg-icon svg { width: 17px; height: 17px; stroke: var(--blue-dark); fill: none; stroke-width: 1.8; }
 .cfg-text { font-size: 14px; font-weight: 500; color: var(--text); }
 .cfg-sub  { font-size: 12px; color: var(--text-soft); margin-top: 1px; }
-.cfg-arrow { color: var(--border); font-size: 18px; }
+.cfg-arrow { color: var(--text-faint); font-size: 18px; }
 
 /* ── WATERMARK SCRIPT ────────────────────────────── */
 .script-accent {
   font-family: var(--font-script);
-  color: var(--blue-dark); opacity: .12;
+  color: var(--blue-dark); opacity: .16;
   font-size: 80px; line-height: 1;
   position: absolute; right: -10px; bottom: -16px;
   pointer-events: none; user-select: none;
@@ -2248,7 +2254,7 @@ select.form-control {
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-msg')">Fechar</button>
       <button class="btn btn-ghost" onclick="copiarMsgTexto()">Copiar</button>
-      <button class="btn btn-primary" id="msg-wa-btn" style="background:#25D366" onclick="abrirWhatsappMsg()">
+      <button class="btn btn-primary" id="msg-wa-btn" style="background:#0E7F42" onclick="abrirWhatsappMsg()">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
         WhatsApp
       </button>
@@ -4995,14 +5001,14 @@ function statusEstoqueMaterial(m){
   const e   = parseFloat(m.estoque) || 0;
   const min = parseFloat(m.estoqueMin) || 0;
   if (min > 0){
-    if (e >= min * 2)   return { tier:'boa',      cor:'#1F9C5C',       bg:'#E8F8EF',           border:'#A9E8C6',           label:'Boa quantidade' };
-    if (e >= min)       return { tier:'acabando', cor:'#C0701A',       bg:'#FFF3E0',           border:'#FBD9A6',           label:'Acabando' };
+    if (e >= min * 2)   return { tier:'boa',      cor:'#157A46',       bg:'#E8F8EF',           border:'#8FDDB4',           label:'Boa quantidade' };
+    if (e >= min)       return { tier:'acabando', cor:'#9A5A0F',       bg:'#FFF3E0',           border:'#F3C87F',           label:'Acabando' };
     if (e >= min * 0.5) return { tier:'baixo',    cor:'var(--danger)', bg:'var(--rose-pale)',  border:'var(--rose-light)', label:'Baixo' };
     return                 { tier:'critico', cor:'var(--danger)', bg:'var(--rose-pale)',  border:'var(--rose-light)', label:'Crítico' };
   }
   // Sem mínimo definido: usa faixas gerais como aproximação
-  if (e >= 100) return { tier:'boa',      cor:'#1F9C5C',      bg:'#E8F8EF',        border:'#A9E8C6',       label:'Boa quantidade' };
-  if (e >= 50)  return { tier:'acabando', cor:'#C0701A',      bg:'#FFF3E0',        border:'#FBD9A6',       label:'Acabando' };
+  if (e >= 100) return { tier:'boa',      cor:'#157A46',      bg:'#E8F8EF',        border:'#8FDDB4',       label:'Boa quantidade' };
+  if (e >= 50)  return { tier:'acabando', cor:'#9A5A0F',      bg:'#FFF3E0',        border:'#F3C87F',       label:'Acabando' };
   if (e >= 20)  return { tier:'baixo',    cor:'var(--danger)', bg:'var(--rose-pale)', border:'var(--rose-light)', label:'Baixo' };
   return          { tier:'critico',  cor:'var(--danger)', bg:'var(--rose-pale)', border:'var(--rose-light)', label:'Crítico' };
 }
@@ -5018,7 +5024,7 @@ function renderNiveisEstoque(){
   return `
     <div class="fin-grid">
       <div class="fin-tile"><div class="fin-tile-label">Boa quantidade</div><div class="fin-tile-value green">${contagem.boa}</div></div>
-      <div class="fin-tile"><div class="fin-tile-label">Acabando</div><div class="fin-tile-value" style="color:#C0701A">${contagem.acabando}</div></div>
+      <div class="fin-tile"><div class="fin-tile-label">Acabando</div><div class="fin-tile-value" style="color:#9A5A0F">${contagem.acabando}</div></div>
       <div class="fin-tile"><div class="fin-tile-label">Baixo</div><div class="fin-tile-value red">${contagem.baixo}</div></div>
       <div class="fin-tile"><div class="fin-tile-label">Crítico</div><div class="fin-tile-value red">${contagem.critico}</div></div>
     </div>
@@ -6098,7 +6104,7 @@ function renderLucratividade(){
           <div class="pedido-nome">${p.nome||'—'}</div>
           <div class="pedido-sub">${p.dataEntrega?formatDate(p.dataEntrega):'—'}${p.produtos?' · '+(p.produtos.length>30?p.produtos.slice(0,30)+'…':p.produtos):''}</div>
         </div>
-        <span class="badge" style="background:${c.margem>=0?'#E8F8EF':'var(--rose-pale)'};color:${c.margem>=0?'#1F9C5C':'var(--rose-dark)'};border-color:${c.margem>=0?'#A9E8C6':'var(--rose-light)'}">${c.margem.toFixed(0)}% margem</span>
+        <span class="badge" style="background:${c.margem>=0?'#E8F8EF':'var(--rose-pale)'};color:${c.margem>=0?'#157A46':'var(--rose-dark)'};border-color:${c.margem>=0?'#8FDDB4':'var(--rose-light)'}">${c.margem.toFixed(0)}% margem</span>
       </div>
       <div class="detail-row"><span class="detail-key">Valor pago</span><span class="detail-val" style="color:var(--success)">${fmtM(p.pago)}</span></div>
       <div class="detail-row"><span class="detail-key">Custo materiais</span><span class="detail-val">${fmtM(c.custoMateriais)}</span></div>
