@@ -1633,7 +1633,7 @@ select.form-control {
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" id="card-ajuda">
         <div class="card-label">Ajuda</div>
         <div class="cfg-row" onclick="reverTutorial()">
           <div class="cfg-left">
@@ -2984,8 +2984,25 @@ async function showForgot() {
 
    É uma versão, não um sim/não: quando houver novidade suficiente para um
    tutorial novo, basta aumentar TUTORIAL_VERSAO e ele volta a aparecer
-   uma vez em cada aparelho.                                              */
+   uma vez em cada aparelho.
+
+   ── PARA DESLIGAR OU TIRAR O TUTORIAL ───────────────────────────────
+   Desligar: troque TUTORIAL_ATIVO para false, logo abaixo. Ele deixa de
+   aparecer no acesso e o atalho sai das Configurações — nada mais muda.
+
+   Tirar de vez: o tutorial não se mistura com o resto do app. É só apagar
+   estes quatro blocos e duas linhas, todos marcados com o mesmo título:
+     1. este bloco de código, até o fim do listener de teclado;
+     2. no <style>, o bloco "TUTORIAL DE BOAS-VINDAS" (classes .tut-*);
+     3. no <style>, dentro do @media (min-width:700px), as quatro regras
+        .tut-overlay/.tut-card do fim do bloco;
+     4. no HTML, o <div id="tutorial"> inteiro;
+     5. em bootApp(), a linha verificarTutorial();
+     6. no HTML da tela de configurações, o cartão <div id="card-ajuda">.
+   Nada fora dessa lista chama o tutorial. O que fica no aparelho é apenas
+   a marca cdg_config.tutorialVisto, inofensiva se ninguém a ler.        */
 const TUTORIAL_VERSAO = 1;
+const TUTORIAL_ATIVO  = true;
 
 const TUTORIAL_PASSOS = [
   {
@@ -3121,7 +3138,7 @@ function tutorialJaVisto(){
 
 // Chamado no fim do bootApp: aparece uma vez, depois do painel já desenhado
 function verificarTutorial(){
-  if (tutorialJaVisto()) return;
+  if (!TUTORIAL_ATIVO || tutorialJaVisto()) return;
   setTimeout(() => abrirTutorial(), 550);
 }
 
@@ -3220,6 +3237,14 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowRight') { e.preventDefault(); tutorialAvancar(); }
   if (e.key === 'ArrowLeft')  { e.preventDefault(); tutorialAnterior(); }
 });
+
+// Desligado por TUTORIAL_ATIVO: o atalho das Configurações também sai de cena
+if (!TUTORIAL_ATIVO) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const card = document.getElementById('card-ajuda');
+    if (card) card.style.display = 'none';
+  });
+}
 
 /* ── NAVIGATION ──────────────────────────────────── */
 const screenTitles = { dashboard:null, pedidos:'Pedidos', agenda:'Agenda', financeiro:'Financeiro', vendas:'Vendas', produtos:'Produtos', vitrine:'Loja online', estoque:'Estoque', clientes:'Clientes', ia:'Análise de clientes', assistente:'Assistente', config:'Configurações' };
